@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background">#F5F6FA</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="primary_blue">#3B6DF6</color>
+    <color name="primary_blue_dark">#2E56C4</color>
+
+    <color name="text_primary">#1B1D28</color>
+    <color name="text_secondary">#8A8D99</color>
+
+    <color name="status_pending">#F2A93B</color>
+    <color name="status_overdue">#E5484D</color>
+    <color name="status_paid">#2FB86E</color>
+
+    <color name="icon_check">#2FB86E</color>
+    <color name="icon_eye">#3B6DF6</color>
+    <color name="icon_warning">#F2A93B</color>
+
+    <color name="avatar_bg">#FCEBC9</color>
+    <color name="avatar_text">#B8862E</color>
+
+    <color name="quick_presupuesto_bg">#E8ECFE</color>
+    <color name="quick_factura_bg">#EDE9FE</color>
+    <color name="quick_gasto_bg">#FFF1D6</color>
+    <color name="quick_cliente_bg">#DFF6E8</color>
+</resources>

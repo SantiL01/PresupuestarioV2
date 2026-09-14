@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:weightSum="4"
+    android:paddingVertical="8dp">
+
+    <!-- Cada acceso rápido es ícono + etiqueta, clickeable -->
+    <LinearLayout
+        android:id="@+id/actionPresupuesto"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_rounded_icon_presupuesto"
+            android:src="@drawable/ic_budget"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Presupuesto"
+            android:textSize="12sp"
+            android:textColor="@color/primary_blue" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionFactura"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_rounded_icon_factura"
+            android:src="@drawable/ic_invoice"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Factura"
+            android:textSize="12sp"
+            android:textColor="#7B5CFA" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionGasto"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_rounded_icon_gasto"
+            android:src="@drawable/ic_expense"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Gasto"
+            android:textSize="12sp"
+            android:textColor="#F2A93B" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/actionCliente"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_rounded_icon_cliente"
+            android:src="@drawable/ic_client"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Cliente"
+            android:textSize="12sp"
+            android:textColor="#2FB86E" />
+    </LinearLayout>
+
+</LinearLayout>
