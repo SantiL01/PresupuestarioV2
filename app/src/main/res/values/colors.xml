@@ -23,4 +23,16 @@
     <color name="quick_factura_bg">#EDE9FE</color>
     <color name="quick_gasto_bg">#FFF1D6</color>
     <color name="quick_cliente_bg">#DFF6E8</color>
+
+    <!-- Paleta rotativa para los avatares de la lista de Clientes -->
+    <color name="client_avatar_bg_1">#DCE4FE</color>
+    <color name="client_avatar_text_1">#3B6DF6</color>
+    <color name="client_avatar_bg_2">#DAF3E3</color>
+    <color name="client_avatar_text_2">#2FB86E</color>
+    <color name="client_avatar_bg_3">#D7F0E6</color>
+    <color name="client_avatar_text_3">#1FA37A</color>
+    <color name="client_avatar_bg_4">#E1E8FE</color>
+    <color name="client_avatar_text_4">#4D6BE0</color>
+    <color name="client_avatar_bg_5">#F1E3FA</color>
+    <color name="client_avatar_text_5">#9B5FD1</color>
 </resources>

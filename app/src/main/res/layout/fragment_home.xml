@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<!--
+    Nota: el bottom nav + FAB ya NO viven acá. Ahora viven una sola vez en
+    activity_main.xml, porque son una barra persistente que se comparte
+    entre TODAS las pantallas (Home, Clientes, etc.), no algo propio de
+    esta vista. MainActivity.java es quien la maneja.
+-->
+<androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
-
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingBottom="88dp">
+    android:background="@color/background"
+    android:clipToPadding="false"
+    android:paddingBottom="88dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -459,14 +461,5 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp" />
 
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- ===== Barra de navegación inferior + FAB central ===== -->
-    <include
-        layout="@layout/layout_bottom_nav"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

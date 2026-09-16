@@ -12,12 +12,12 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.presupuestariov2.MainActivity;
 import com.example.presupuestariov2.R;
 import com.example.presupuestariov2.adapter.ActivityAdapter;
 import com.example.presupuestariov2.adapter.ReceivableAdapter;
 import com.example.presupuestariov2.model.ActivityItem;
 import com.example.presupuestariov2.model.Receivable;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,8 +55,9 @@ public class HomeFragment extends Fragment {
         setupReceivables(view);
         setupMonthSelector(view);
         setupQuickActions(view);
-        setupBottomNavAndFab(view);
         setupChart(view);
+        // El bottom nav + FAB ahora los maneja MainActivity (ver layout_bottom_nav.xml
+        // en activity_main.xml), porque son compartidos entre todas las pantallas.
     }
 
     // ---------------------------------------------------------------------
@@ -134,27 +135,14 @@ public class HomeFragment extends Fragment {
                 Toast.makeText(getContext(), "TODO: ir a Nueva Factura", Toast.LENGTH_SHORT).show());
         row.findViewById(R.id.actionGasto).setOnClickListener(v ->
                 Toast.makeText(getContext(), "TODO: ir a Nuevo Gasto", Toast.LENGTH_SHORT).show());
-        row.findViewById(R.id.actionCliente).setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: ir a Nuevo Cliente", Toast.LENGTH_SHORT).show());
-    }
 
-    // ---------------------------------------------------------------------
-    // Navegación inferior + FAB
-    // ---------------------------------------------------------------------
-    private void setupBottomNavAndFab(View root) {
-        FloatingActionButton fab = root.findViewById(R.id.fabAdd);
-        fab.setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: abrir menú de creación rápida", Toast.LENGTH_SHORT).show());
-
-        root.findViewById(R.id.navInicio).setOnClickListener(v -> { /* ya estamos acá */ });
-        root.findViewById(R.id.navPresupuestos).setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: navegar a Presupuestos", Toast.LENGTH_SHORT).show());
-        root.findViewById(R.id.navClientes).setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: navegar a Clientes", Toast.LENGTH_SHORT).show());
-        root.findViewById(R.id.navCobros).setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: navegar a Cobros", Toast.LENGTH_SHORT).show());
-        root.findViewById(R.id.navMas).setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: navegar a Más", Toast.LENGTH_SHORT).show());
+        // Este acceso rápido sí lo dejamos ya conectado: lleva a la pantalla Clientes
+        // reutilizando la navegación central de MainActivity.
+        row.findViewById(R.id.actionCliente).setOnClickListener(v -> {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).openClientes();
+            }
+        });
     }
 
     // ---------------------------------------------------------------------

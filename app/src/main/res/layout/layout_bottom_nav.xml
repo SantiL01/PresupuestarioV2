@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Barra de navegación inferior + FAB. Vive UNA sola vez en activity_main.xml
+    y la maneja MainActivity.java (clicks + resaltado de la pestaña activa),
+    para que sea compartida entre todas las pantallas (Home, Clientes, etc.)
+    en vez de repetirse en cada fragment.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -24,18 +30,18 @@
             android:focusable="true">
 
             <ImageView
+                android:id="@+id/ivNavInicio"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:src="@drawable/ic_home"
-                app:tint="@color/primary_blue"
                 android:contentDescription="@null" />
 
             <TextView
+                android:id="@+id/tvNavInicio"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Inicio"
-                android:textSize="11sp"
-                android:textColor="@color/primary_blue" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -49,17 +55,18 @@
             android:focusable="true">
 
             <ImageView
+                android:id="@+id/ivNavPresupuestos"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:src="@drawable/ic_budget"
+                android:src="@drawable/ic_nav_budget"
                 android:contentDescription="@null" />
 
             <TextView
+                android:id="@+id/tvNavPresupuestos"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Presupuestos"
-                android:textSize="11sp"
-                android:textColor="@color/text_secondary" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <!-- Espacio reservado para el FAB central -->
@@ -79,17 +86,18 @@
             android:focusable="true">
 
             <ImageView
+                android:id="@+id/ivNavClientes"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:src="@drawable/ic_client"
+                android:src="@drawable/ic_nav_client"
                 android:contentDescription="@null" />
 
             <TextView
+                android:id="@+id/tvNavClientes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Clientes"
-                android:textSize="11sp"
-                android:textColor="@color/text_secondary" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -103,17 +111,18 @@
             android:focusable="true">
 
             <ImageView
+                android:id="@+id/ivNavCobros"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:src="@drawable/ic_collect"
+                android:src="@drawable/ic_nav_collect"
                 android:contentDescription="@null" />
 
             <TextView
+                android:id="@+id/tvNavCobros"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Cobros"
-                android:textSize="11sp"
-                android:textColor="@color/text_secondary" />
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -127,17 +136,18 @@
             android:focusable="true">
 
             <ImageView
+                android:id="@+id/ivNavMas"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:src="@drawable/ic_more"
                 android:contentDescription="@null" />
 
             <TextView
+                android:id="@+id/tvNavMas"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Más"
-                android:textSize="11sp"
-                android:textColor="@color/text_secondary" />
+                android:textSize="11sp" />
         </LinearLayout>
 
     </LinearLayout>
