@@ -152,17 +152,4 @@
 
     </LinearLayout>
 
-    <!-- FAB "+" centrado sobre la barra -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAdd"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="34dp"
-        android:src="@drawable/ic_add"
-        app:tint="@android:color/white"
-        app:backgroundTint="@color/primary_blue"
-        app:fabSize="normal"
-        app:elevation="6dp" />
-
 </FrameLayout>

@@ -17,7 +17,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Clientes"
+            android:text="Presupuestos"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />
@@ -40,13 +40,13 @@
             android:contentDescription="@null" />
 
         <EditText
-            android:id="@+id/etSearchClient"
+            android:id="@+id/etSearchBudget"
             android:layout_width="0dp"
             android:layout_height="46dp"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:background="@null"
-            android:hint="Buscar cliente..."
+            android:hint="Buscar por cliente o N°..."
             android:textColorHint="@color/text_secondary"
             android:textSize="14sp"
             android:textColor="@color/text_primary"
@@ -55,9 +55,9 @@
             android:imeOptions="actionSearch" />
     </LinearLayout>
 
-    <!-- ===== Lista de clientes ===== -->
+    <!-- ===== Lista de presupuestos ===== -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvClients"
+        android:id="@+id/rvBudgets"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"

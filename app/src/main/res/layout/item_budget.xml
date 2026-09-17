@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvBudgetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Presupuesto #000"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#212529" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:text="Estado"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvClientName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvBudgetTitle"
+            android:layout_marginTop="4dp"
+            android:text="Nombre Cliente"
+            android:textSize="14sp"
+            android:textColor="#6C757D" />
+
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvClientName"
+            android:layout_marginTop="8dp"
+            android:text="17 Sep 2026"
+            android:textSize="12sp"
+            android:textColor="#ADB5BD" />
+
+        <TextView
+            android:id="@+id/tvAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvClientName"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="8dp"
+            android:text="$0.00"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#212529" />
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>
