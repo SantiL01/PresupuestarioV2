@@ -1,4 +1,4 @@
-package com.example.presupuestariov2.cobros;
+package com.example.presupuestariov2.ui.controladores;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -14,9 +14,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.presupuestariov2.R;
-import com.example.presupuestariov2.adapter.ReceivableAdapter;
-import com.example.presupuestariov2.model.DataManager;
-import com.example.presupuestariov2.model.Receivable;
+import com.example.presupuestariov2.ui.adaptadores.ReceivableAdapter;
+import com.example.presupuestariov2.data.repository.DataManager;
+import com.example.presupuestariov2.data.modelos.Receivable;
 
 import java.util.ArrayList;
 import java.util.List;

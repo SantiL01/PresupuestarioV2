@@ -1,4 +1,4 @@
-package com.example.presupuestariov2.home;
+package com.example.presupuestariov2.ui.controladores;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,12 +12,11 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.presupuestariov2.MainActivity;
 import com.example.presupuestariov2.R;
-import com.example.presupuestariov2.adapter.ActivityAdapter;
-import com.example.presupuestariov2.adapter.ReceivableAdapter;
-import com.example.presupuestariov2.model.ActivityItem;
-import com.example.presupuestariov2.model.Receivable;
+import com.example.presupuestariov2.ui.adaptadores.ActivityAdapter;
+import com.example.presupuestariov2.ui.adaptadores.ReceivableAdapter;
+import com.example.presupuestariov2.data.modelos.ActivityItem;
+import com.example.presupuestariov2.data.modelos.Receivable;
 
 import java.util.ArrayList;
 import java.util.List;

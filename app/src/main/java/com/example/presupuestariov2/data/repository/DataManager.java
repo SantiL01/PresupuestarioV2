@@ -1,4 +1,8 @@
-package com.example.presupuestariov2.model;
+package com.example.presupuestariov2.data.repository;
+
+import com.example.presupuestariov2.data.modelos.Budget;
+import com.example.presupuestariov2.data.modelos.Client;
+import com.example.presupuestariov2.data.modelos.Receivable;
 
 import java.util.ArrayList;
 import java.util.List;

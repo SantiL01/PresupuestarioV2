@@ -1,4 +1,4 @@
-package com.example.presupuestariov2.more;
+package com.example.presupuestariov2.ui.controladores;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

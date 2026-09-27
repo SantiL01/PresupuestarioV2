@@ -1,4 +1,4 @@
-package com.example.presupuestariov2;
+package com.example.presupuestariov2.ui.controladores;
 
 import android.os.Bundle;
 import android.view.View;
@@ -15,15 +15,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.presupuestariov2.budgets.PresupuestosFragment;
-import com.example.presupuestariov2.clients.ClientesFragment;
-import com.example.presupuestariov2.cobros.CobrosFragment;
-import com.example.presupuestariov2.model.Budget;
-import com.example.presupuestariov2.model.Client;
-import com.example.presupuestariov2.model.DataManager;
-import com.example.presupuestariov2.model.Receivable;
-import com.example.presupuestariov2.more.MasFragment;
-import com.example.presupuestariov2.home.HomeFragment;
+import com.example.presupuestariov2.R;
+
+import com.example.presupuestariov2.data.modelos.Budget;
+import com.example.presupuestariov2.data.modelos.Client;
+import com.example.presupuestariov2.data.repository.DataManager;
+import com.example.presupuestariov2.data.modelos.Receivable;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 public class MainActivity extends AppCompatActivity {

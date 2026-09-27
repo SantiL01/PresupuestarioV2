@@ -1,4 +1,4 @@
-package com.example.presupuestariov2.model;
+package com.example.presupuestariov2.data.modelos;
 
 /**
  * Representa una fila de la sección "Actividad reciente" del Home.

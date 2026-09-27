@@ -1,4 +1,4 @@
-package com.example.presupuestariov2.model;
+package com.example.presupuestariov2.data.modelos;
 
 /**
  * Representa un Presupuesto en la pantalla "Presupuestos".

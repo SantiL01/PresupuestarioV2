@@ -1,4 +1,4 @@
-package com.example.presupuestariov2.adapter;
+package com.example.presupuestariov2.ui.adaptadores;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.presupuestariov2.R;
-import com.example.presupuestariov2.model.Receivable;
+import com.example.presupuestariov2.data.modelos.Receivable;
 
 import java.text.NumberFormat;
 import java.util.List;
