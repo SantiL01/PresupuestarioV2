@@ -74,6 +74,7 @@ public class CobrosFragment extends Fragment {
                         .setTitle("Actualizar Cobro")
                         .setItems(opciones, (dialog, which) -> {
                             receivable.setStatus(Receivable.Status.values()[which]);
+                            DataManager.getInstance().updateReceivableStatus(receivable);
                             adapter.notifyDataSetChanged();
                         })
                         .show();

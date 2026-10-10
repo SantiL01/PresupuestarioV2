@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -13,18 +14,23 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.presupuestariov2.R;
-import com.example.presupuestariov2.ui.adaptadores.ActivityAdapter;
-import com.example.presupuestariov2.ui.adaptadores.ReceivableAdapter;
-import com.example.presupuestariov2.data.modelos.ActivityItem;
 import com.example.presupuestariov2.data.modelos.Receivable;
+import com.example.presupuestariov2.data.repository.DataManager;
+import com.example.presupuestariov2.ui.adaptadores.ReceivableAdapter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class HomeFragment extends Fragment {
 
-    private RecyclerView rvRecentActivity;
     private RecyclerView rvReceivables;
+    private ReceivableAdapter adapter;
+    private TextView tvTotalPorCobrar;
+    private TextView tvEmptyReceivables;
+    private final List<Receivable> pendientes = new ArrayList<>();
 
     public HomeFragment() {}
 
@@ -39,71 +45,44 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        setupRecentActivity(view);
-        setupReceivables(view);
-        setupMonthSelector(view);
+        setupHeader(view);
         setupQuickActions(view);
-        setupChart(view);
+        setupReceivables(view);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshReceivables();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Liberación de referencias clave para evitar fugas en Home
-        rvRecentActivity = null;
         rvReceivables = null;
+        adapter = null;
+        tvTotalPorCobrar = null;
+        tvEmptyReceivables = null;
     }
 
-    private void setupRecentActivity(View root) {
-        rvRecentActivity = root.findViewById(R.id.rvRecentActivity);
-        rvRecentActivity.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvRecentActivity.setAdapter(new ActivityAdapter(loadRecentActivity()));
+    private void setupHeader(View root) {
+        TextView tvGreetingTime = root.findViewById(R.id.tvGreetingTime);
+        TextView tvSelectedMonth = root.findViewById(R.id.tvSelectedMonth);
 
-        root.findViewById(R.id.tvSeeAllActivity).setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: ir a pantalla de actividad completa", Toast.LENGTH_SHORT).show());
-    }
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        String saludo = hour < 12 ? "Buenos días" : (hour < 20 ? "Buenas tardes" : "Buenas noches");
+        tvGreetingTime.setText(saludo);
 
-    private List<ActivityItem> loadRecentActivity() {
-        List<ActivityItem> list = new ArrayList<>();
-        list.add(new ActivityItem(ActivityItem.Type.APROBADO, "Pedro aprobó Presupuesto #00124", "Hace 1h"));
-        list.add(new ActivityItem(ActivityItem.Type.PAGO, "Recibiste $350.000", "Hace 3h"));
-        list.add(new ActivityItem(ActivityItem.Type.VISTO, "María visualizó Factura #00087", "Ayer"));
-        list.add(new ActivityItem(ActivityItem.Type.ALERTA, "Factura #00082 vence mañana", "Ayer"));
-        return list;
-    }
-
-    private void setupReceivables(View root) {
-        rvReceivables = root.findViewById(R.id.rvReceivables);
-        rvReceivables.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvReceivables.setAdapter(new ReceivableAdapter(loadReceivables(), receivable ->
-                Toast.makeText(getContext(), "Cobro: " + receivable.getCode(), Toast.LENGTH_SHORT).show()));
-
-        root.findViewById(R.id.tvSeeAllReceivables).setOnClickListener(v -> {
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).openCobros();
-            }
-        });
-    }
-
-    private List<Receivable> loadReceivables() {
-        List<Receivable> list = new ArrayList<>();
-        list.add(new Receivable("Pedro García", "#00087", "Vence 30 Ago 2026", 450000, Receivable.Status.PENDIENTE));
-        list.add(new Receivable("Carlos Ruiz", "#00086", "Vence 25 Ago 2026", 320000, Receivable.Status.VENCIDO));
-        list.add(new Receivable("Sofía Torres", "#00082", "Vence 22 Ago 2026", 300000, Receivable.Status.PENDIENTE));
-        return list;
-    }
-
-    private void setupMonthSelector(View root) {
-        root.findViewById(R.id.monthSelector).setOnClickListener(v ->
-                Toast.makeText(getContext(), "TODO: abrir selector de mes/año", Toast.LENGTH_SHORT).show());
+        String mes = new SimpleDateFormat("MMMM yyyy", new Locale("es", "ES"))
+                .format(Calendar.getInstance().getTime());
+        if (!mes.isEmpty()) {
+            mes = mes.substring(0, 1).toUpperCase(new Locale("es", "ES")) + mes.substring(1);
+        }
+        tvSelectedMonth.setText(mes);
     }
 
     private void setupQuickActions(View root) {
-        setupQuickActionsRow(root.findViewById(R.id.quickActionsTop));
-        setupQuickActionsRow(root.findViewById(R.id.quickActionsBottom));
-    }
-
-    private void setupQuickActionsRow(View row) {
+        View row = root.findViewById(R.id.quickActionsTop);
         if (row == null) return;
         row.findViewById(R.id.actionPresupuesto).setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) ((MainActivity) getActivity()).openPresupuestos();
@@ -116,7 +95,45 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void setupChart(View root) {
-        // Contenedor reservado para gráficos (MPAndroidChart)
+    private void setupReceivables(View root) {
+        rvReceivables = root.findViewById(R.id.rvReceivables);
+        tvTotalPorCobrar = root.findViewById(R.id.tvTotalPorCobrar);
+        tvEmptyReceivables = root.findViewById(R.id.tvEmptyReceivables);
+
+        rvReceivables.setLayoutManager(new LinearLayoutManager(getContext()));
+        adapter = new ReceivableAdapter(pendientes, receivable ->
+                Toast.makeText(getContext(), "Cobro: " + receivable.getCode(), Toast.LENGTH_SHORT).show());
+        rvReceivables.setAdapter(adapter);
+
+        root.findViewById(R.id.tvSeeAllReceivables).setOnClickListener(v -> {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).openCobros();
+            }
+        });
+
+        refreshReceivables();
+    }
+
+    private void refreshReceivables() {
+        pendientes.clear();
+        double total = 0;
+        for (Receivable r : DataManager.getInstance().getReceivables()) {
+            // Solo lo no cobrado: PENDIENTE o VENCIDO. PAGADO ya no es por cobrar.
+            if (r.getStatus() == Receivable.Status.PENDIENTE
+                    || r.getStatus() == Receivable.Status.VENCIDO) {
+                pendientes.add(r);
+                total += r.getAmount();
+            }
+        }
+        if (adapter != null) adapter.notifyDataSetChanged();
+        if (tvTotalPorCobrar != null) {
+            tvTotalPorCobrar.setText(String.format(Locale.getDefault(),
+                    "$ %.2f pendiente (%d)", total, pendientes.size()));
+        }
+        if (tvEmptyReceivables != null && rvReceivables != null) {
+            boolean empty = pendientes.isEmpty();
+            tvEmptyReceivables.setVisibility(empty ? View.VISIBLE : View.GONE);
+            rvReceivables.setVisibility(empty ? View.GONE : View.VISIBLE);
+        }
     }
 }

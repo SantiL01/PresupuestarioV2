@@ -68,6 +68,7 @@ public class PresupuestosFragment extends Fragment {
                     .setTitle("Cambiar estado")
                     .setItems(opciones, (dialog, which) -> {
                         budget.setStatus(Budget.Status.values()[which]);
+                        DataManager.getInstance().updateBudgetStatus(budget);
                         adapter.notifyDataSetChanged();
                     })
                     .show();

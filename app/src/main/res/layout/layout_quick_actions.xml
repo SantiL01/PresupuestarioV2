@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:weightSum="4"
+    android:weightSum="3"
     android:paddingVertical="8dp">
 
     <!-- Cada acceso rápido es ícono + etiqueta, clickeable -->
@@ -58,37 +58,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Factura"
+            android:text="Cobros"
             android:textSize="12sp"
             android:textColor="#7B5CFA" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/actionGasto"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true">
-
-        <ImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="12dp"
-            android:background="@drawable/bg_rounded_icon_gasto"
-            android:src="@drawable/ic_expense"
-            android:contentDescription="@null" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Gasto"
-            android:textSize="12sp"
-            android:textColor="#F2A93B" />
     </LinearLayout>
 
     <LinearLayout

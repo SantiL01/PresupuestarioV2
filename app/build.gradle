@@ -47,4 +47,8 @@ dependencies {
 
     // Para el gráfico de barras (opcional, ver setupChart() en HomeFragment)
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
+    // Room (base de datos local SQLite)
+    implementation libs.room.runtime
+    annotationProcessor libs.room.compiler
 }

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@color/card_background">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Agregar Ítem"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/etDescItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Descripción del ítem"
+        android:background="@drawable/bg_search_bar"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cantidad" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etCantidadItem"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:inputType="numberDecimal"
+                android:background="@drawable/bg_search_bar"
+                android:padding="12dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Unidad" android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <Spinner
+                android:id="@+id/spinnerUnidadItem"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_search_bar"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Precio Unitario ($)"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:id="@+id/etPrecioItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="numberDecimal"
+        android:background="@drawable/bg_search_bar"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#F5F6FA"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#E8EEFE">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Subtotal:"
+            android:textStyle="bold"
+            android:textColor="@color/primary_blue"/>
+
+        <TextView
+            android:id="@+id/tvDialogSubtotalLive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$ 0.00"
+            android:textStyle="bold"
+            android:layout_alignParentEnd="true"
+            android:textColor="@color/primary_blue"/>
+    </RelativeLayout>
+
+</LinearLayout>

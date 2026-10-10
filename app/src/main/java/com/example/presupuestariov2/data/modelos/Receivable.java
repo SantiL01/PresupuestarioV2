@@ -8,6 +8,9 @@ public class Receivable {
         PAGADO
     }
 
+    private long dbId;
+    private long clientId;
+    private long budgetId;
     private final String clientName;
     private final String code;
     private final String dueDateText;
@@ -28,6 +31,12 @@ public class Receivable {
     public String getDueDateText() { return dueDateText; }
     public double getAmount() { return amount; }
     public Status getStatus() { return status; }
+    public long getDbId() { return dbId; }
+    public void setDbId(long dbId) { this.dbId = dbId; }
+    public long getClientId() { return clientId; }
+    public void setClientId(long clientId) { this.clientId = clientId; }
+    public long getBudgetId() { return budgetId; }
+    public void setBudgetId(long budgetId) { this.budgetId = budgetId; }
 
     public void setStatus(Status status) {
         if (status != null) {

@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DataManager.getInstance().init(getApplicationContext());
         setContentView(R.layout.activity_main);
 
         bindBottomNavViews();
@@ -104,21 +105,29 @@ public class MainActivity extends AppCompatActivity {
         View view = getLayoutInflater().inflate(R.layout.dialog_nuevo_cliente, null);
         EditText etNombre = view.findViewById(R.id.etNombreCliente);
         EditText etEmail = view.findViewById(R.id.etEmailCliente);
+        EditText etTelefono = view.findViewById(R.id.etTelefonoCliente);
 
         activeDialog = new AlertDialog.Builder(this)
                 .setView(view)
                 .setPositiveButton("Guardar", (dialog, which) -> {
                     String nombre = etNombre.getText().toString().trim();
                     String email = etEmail.getText().toString().trim();
+                    String telefono = etTelefono != null ? etTelefono.getText().toString().trim() : "";
 
                     if (!nombre.isEmpty()) {
-                        Client nuevo = new Client(nombre, email, 0, 0, 0.0);
-                        DataManager.getInstance().addClient(nuevo);
+                        Client nuevo = new Client(nombre, email, telefono, 0, 0, 0.0);
+                        long id = DataManager.getInstance().addClient(nuevo);
+                        if (id == -1 && DataManager.getInstance().isInitialized()) {
+                            Toast.makeText(this, "No se pudo guardar (email duplicado?)", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
                         Toast.makeText(this, "Cliente agregado con éxito", Toast.LENGTH_SHORT).show();
 
                         Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
                         if (currentFragment instanceof ClientesFragment) {
                             ((ClientesFragment) currentFragment).refreshList();
+                        } else if (currentFragment instanceof NuevoPresupuestoFragment) {
+                            ((NuevoPresupuestoFragment) currentFragment).recargarClientes();
                         } else {
                             openClientes();
                         }
@@ -131,54 +140,21 @@ public class MainActivity extends AppCompatActivity {
         activeDialog.show();
     }
 
+    public void mostrarFormularioClientePublic() { mostrarFormularioCliente(); }
+
     private void mostrarFormularioPresupuesto() {
-        View view = getLayoutInflater().inflate(R.layout.dialog_nuevo_presupuesto, null);
-        Spinner spinner = view.findViewById(R.id.spinnerClientePresupuesto);
-        Button btnAtajo = view.findViewById(R.id.btnAtajoClientePresup);
-        EditText etMonto = view.findViewById(R.id.etMontoPresupuesto);
+        // 1. Cerrar o esconder el AlertDialog de opciones del FAB si aún está abierto
+        // (Tu código actual para cerrar el menú)
 
-        ArrayAdapter<Client> spinnerAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                DataManager.getInstance().getClients());
-        spinner.setAdapter(spinnerAdapter);
+        // 2. Navegar al nuevo Fragment en lugar de abrir el AlertDialog del presupuesto
+        NuevoPresupuestoFragment fragment = new NuevoPresupuestoFragment();
 
-        activeDialog = new AlertDialog.Builder(this)
-                .setView(view)
-                .setPositiveButton("Crear", (d, which) -> {
-                    Client clienteSeleccionado = (Client) spinner.getSelectedItem();
-                    String montoStr = etMonto.getText().toString().trim();
-
-                    if (clienteSeleccionado != null && !montoStr.isEmpty()) {
-                        try {
-                            double monto = Double.parseDouble(montoStr);
-                            String id = "#00" + (int)(Math.random() * 900 + 100);
-                            Budget nuevo = new Budget(id, clienteSeleccionado.getName(), "Hoy", monto, Budget.Status.BORRADOR);
-
-                            DataManager.getInstance().addBudget(nuevo);
-                            Toast.makeText(this, "Presupuesto creado", Toast.LENGTH_SHORT).show();
-
-                            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
-                            if (currentFragment instanceof PresupuestosFragment) {
-                                ((PresupuestosFragment) currentFragment).refreshList();
-                            } else {
-                                openPresupuestos();
-                            }
-                        } catch (NumberFormatException e) {
-                            Toast.makeText(this, "Monto inválido", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Toast.makeText(this, "Complete todos los campos o cree un cliente", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancelar", null)
-                .create();
-
-        btnAtajo.setOnClickListener(v -> {
-            activeDialog.dismiss();
-            mostrarFormularioCliente();
-        });
-
-        activeDialog.show();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null) // Importante para poder volver atrás
+                .commit();
     }
 
     private void mostrarFormularioCobro() {
@@ -206,7 +182,11 @@ public class MainActivity extends AppCompatActivity {
                             Receivable nuevo = new Receivable(
                                     clienteSeleccionado.getName(), codigo, "Reciente", monto, Receivable.Status.PENDIENTE);
 
-                            DataManager.getInstance().addReceivable(nuevo);
+                            long rid = DataManager.getInstance().addReceivable(nuevo);
+                            if (rid == -1 && DataManager.getInstance().isInitialized()) {
+                                Toast.makeText(this, "El código debe coincidir con un presupuesto existente (1 cobro = 1 presupuesto)", Toast.LENGTH_LONG).show();
+                                return;
+                            }
                             Toast.makeText(this, "Cobro registrado", Toast.LENGTH_SHORT).show();
                             openCobros();
                         } catch (NumberFormatException e) {

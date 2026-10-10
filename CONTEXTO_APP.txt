@@ -1,0 +1,93 @@
+CONTEXTO PresupuestarioV2 - para retomar trabajo
+================================================
+Fecha: 2026-10-10
+Repo: repo Programacion Movil / PresupuestarioV2
+Package: com.example.presupuestariov2 | AppId igual
+Stack: Android nativo Java 11, View system XML (NO Compose, NO Kotlin),
+ minSdk 24, targetSdk 37, compileSdk 37, AGP 9.3.1
+Deps: appcompat, material, recyclerview, cardview, coordinatorlayout,
+ constraintlayout, MPAndroidChart (declarada pero SIN uso, chart quitado),
+ Room 2.6.1 (runtime + compiler, allowMainThreadQueries por ser proyecto educativo).
+
+ARQUITECTURA
+------------
+ui/controladores/: MainActivity (bottom nav custom + FAB central),
+ HomeFragment, PresupuestosFragment, ClientesFragment, CobrosFragment,
+ MasFragment, NuevoPresupuestoFragment
+ui/adaptadores/: BudgetAdapter, ClientAdapter, ReceivableAdapter,
+ ActivityAdapter (en desuso, Home ya no muestra actividad), NuevoItemAdapter
+data/modelos/ (dominio UI): Budget, BudgetItem, Client, Receivable, ActivityItem
+data/local/ (Room): AppDatabase (presupuestario.db v1),
+ ClientEntity, BudgetEntity, BudgetItemEntity, ReceivableEntity,
+ ClientDao, BudgetDao (+BudgetWithItems), ReceivableDao
+data/repository/: DataManager (singleton, init(Context) en MainActivity.onCreate,
+ delega todo a Room; fallback en memoria solo si no inicializado/tests).
+
+ESQUEMA ROOM FINAL (1=1 cobro)
+-------------------------------
+clients(id PK auto, name, email UK, phone, created_at)
+budgets(id PK auto, code UK ej #00125, clientId FK->clients CASCADE,
+ date long, descripcion_servicio text libre, total_amount double,
+ status BORRADOR/ENVIADO/APROBADO/RECHAZADO, created_at)
+budget_items(id PK auto, budgetId FK->budgets CASCADE, descripcion text libre,
+ cantidad double, unidad_medida [unid,hs,m,cm,m2,ml,kg,g,l,caja,global,servicio],
+ precio_unitario double; subtotal=cantidad*precio, total=suma directa sin IVA)
+receivables(id PK auto, code UK, clientId FK->clients CASCADE,
+ budgetId FK->budgets UNIQUE CASCADE => 1 cobro=1 presupuesto,
+ amount, due_date long, status PENDIENTE/VENCIDO/PAGADO)
+
+Mermaid:
+erDiagram
+ CLIENTS ||--o{ BUDGETS : tiene
+ BUDGETS ||--o{ BUDGET_ITEMS : contiene
+ CLIENTS ||--o{ RECEIVABLES : debe
+ BUDGETS ||--|| RECEIVABLES : origina
+
+REGLAS NEGOCIO
+--------------
+- Servicios e items texto libre. Total = suma subtotales.
+- addBudget(): inserta budget+items y AUTO-crea cobro espejo mismo code,
+  PENDIENTE, vence +30d. Devuelve -1 si cliente inexistente o code duplicado.
+- addReceivable(manual): exige code == presupuesto existente, si no devuelve -1
+  y la UI avisa. addClient(): email UK, devuelve -1 si duplicado.
+- getBudgets()/getClients()/getReceivables() leen Room y mapean a modelos con
+  dbId/clientId/budgetId + contadores calculados (no guardados).
+- updateBudgetStatus()/updateReceivableStatus() persisten cambios de estado.
+- Seed solo si clients vacía: Pedro García, María López + #00125 con 1 item + cobro.
+
+NAVEGACION / UI REAL vs PLACEHOLDER
+------------------------------------
+- FAB + -> [Nuevo Presupuesto => NuevoPresupuestoFragment (pantalla completa),
+  Nuevo Cliente => dialog_nuevo_cliente (nombre+email+telefono), Registrar Cobro
+  => dialog_nuevo_cobro (exige codigo de presupuesto existente)].
+- NuevoPresupuesto: spinner clientes + btn +Nuevo (abre mismo dialogo y recarga
+  spinner), etDescripcionServicio, rvItems + Agregar Item (dialog_agregar_item
+  con subtotal en vivo), footer Subtotal=Total + Guardar (va a Presupuestos) +
+  Exportar PDF (SOLO Toast, pendiente).
+- Home MINIMALISTA: header saludo por hora + mes actual (solo texto),
+  1 fila quick actions (Presupuesto/Cobros/Cliente; Gasto eliminado),
+  card Por cobrar REAL: filtra PENDIENTE+VENCIDO de Room, muestra
+  "$ total pendiente (n)", empty state si no hay, Ver todo->Cobros.
+  ELIMINADO: Actividad reciente, quickActionsBottom duplicado, Ingresos del mes,
+  Pendiente/Ganancia, Presupuestos emitidos, gráfico, notificaciones, Hola Juan.
+- Presupuestos: lista Room + buscador + cambio estado persistido. OK.
+- Clientes: lista Room + buscador + alta con telefono. Click => Toast (sin ficha, pendiente).
+- Cobros: lista Room + cambio estado persistido. OK.
+- Mas (navMas se mantiene): Configuración => dialogo próxima versión,
+  Cerrar sesión => solo Toast. Único placeholder declarado.
+- layout_quick_actions: weightSum 3, Factura renombrada a Cobros (id actionFactura
+  conservado), actionGasto eliminado.
+
+BUILD
+-----
+.\gradlew.bat :app:assembleDebug -x test  (requiere internet 1ra vez para Room;
+ offline falla si no está en caché). Último estado: BUILD SUCCESSFUL.
+
+PENDIENTES
+---------
+1. Exportar PDF real (PdfDocument/FileProvider/share).
+2. Ficha detalle cliente y detalle presupuesto con items.
+3. Definir contenido real de Mas o esconder tab.
+4. Si se quiere sync multi-dispositivo, agregar backend (hoy todo local).
+5. ActivityAdapter/ActivityItem en desuso, se puede borrar.
+6. MPAndroidChart sin uso, se puede quitar dependencia.

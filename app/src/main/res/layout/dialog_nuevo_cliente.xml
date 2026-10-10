@@ -29,4 +29,12 @@
         android:inputType="textEmailAddress"
         android:layout_marginBottom="12dp"/>
 
-</LinearLayout>dialo
+    <EditText
+        android:id="@+id/etTelefonoCliente"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Teléfono"
+        android:inputType="phone"
+        android:layout_marginBottom="12dp"/>
+
+</LinearLayout>
