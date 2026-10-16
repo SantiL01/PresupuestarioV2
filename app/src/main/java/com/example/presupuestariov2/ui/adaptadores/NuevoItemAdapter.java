@@ -31,7 +31,11 @@ public class NuevoItemAdapter extends RecyclerView.Adapter<NuevoItemAdapter.Item
     public void addItem(BudgetItem item) {
         items.add(item);
         notifyItemInserted(items.size() - 1);
-        listener.onItemsChanged();
+        if (listener != null) listener.onItemsChanged();
+    }
+
+    public void addItemSilent(BudgetItem item) {
+        items.add(item);
     }
 
     public List<BudgetItem> getItems() {

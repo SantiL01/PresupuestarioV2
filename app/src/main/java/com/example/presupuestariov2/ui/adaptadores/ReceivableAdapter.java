@@ -22,14 +22,18 @@ public class ReceivableAdapter extends RecyclerView.Adapter<ReceivableAdapter.Re
         void onReceivableClick(Receivable receivable);
     }
 
-    private final List<Receivable> items;
+    private List<Receivable> items;
     private final OnReceivableClickListener listener;
-    // $ y separador de miles al estilo argentino
     private final NumberFormat currencyFormat = NumberFormat.getInstance(new Locale("es", "AR"));
 
     public ReceivableAdapter(List<Receivable> items, OnReceivableClickListener listener) {
         this.items = items;
         this.listener = listener;
+    }
+
+    public void updateData(List<Receivable> newItems) {
+        this.items = newItems;
+        notifyDataSetChanged();
     }
 
     @NonNull

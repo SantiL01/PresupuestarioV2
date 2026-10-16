@@ -20,24 +20,38 @@ import androidx.room.PrimaryKey;
                 @Index(value = "code", unique = true)})
 public class ReceivableEntity {
     @PrimaryKey(autoGenerate = true)
-    public long id;
+    private long id;
 
     @ColumnInfo(name = "code")
-    public String code;
+    private String code;
 
     @ColumnInfo(name = "clientId")
-    public long clientId;
+    private long clientId;
 
-    // 1 cobro = 1 presupuesto -> FK única
     @ColumnInfo(name = "budgetId")
-    public long budgetId;
+    private long budgetId;
 
     @ColumnInfo(name = "amount")
-    public double amount;
+    private double amount;
 
     @ColumnInfo(name = "due_date")
-    public long dueDate;
+    private long dueDate;
 
     @ColumnInfo(name = "status")
-    public String status;
+    private String status;
+
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+    public long getClientId() { return clientId; }
+    public void setClientId(long clientId) { this.clientId = clientId; }
+    public long getBudgetId() { return budgetId; }
+    public void setBudgetId(long budgetId) { this.budgetId = budgetId; }
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
+    public long getDueDate() { return dueDate; }
+    public void setDueDate(long dueDate) { this.dueDate = dueDate; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

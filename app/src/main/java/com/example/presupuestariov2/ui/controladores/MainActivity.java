@@ -1,6 +1,7 @@
 package com.example.presupuestariov2.ui.controladores;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -14,16 +15,22 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.presupuestariov2.R;
 
-import com.example.presupuestariov2.data.modelos.Budget;
 import com.example.presupuestariov2.data.modelos.Client;
 import com.example.presupuestariov2.data.repository.DataManager;
-import com.example.presupuestariov2.data.modelos.Receivable;
+import com.example.presupuestariov2.ui.viewmodels.SharedViewModel;
+import com.example.presupuestariov2.utils.AppExecutors;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "UI_Main";
 
     private static final int TAB_INICIO = 0;
     private static final int TAB_PRESUPUESTOS = 1;
@@ -36,14 +43,39 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivNavInicio, ivNavPresupuestos, ivNavClientes, ivNavCobros, ivNavMas;
     private TextView tvNavInicio, tvNavPresupuestos, tvNavClientes, tvNavCobros, tvNavMas;
 
-    // Referencia opcional para controlar diálogos abiertos
     private AlertDialog activeDialog;
+    private SharedViewModel sharedViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        DataManager.getInstance().init(getApplicationContext());
+        Log.d(TAG, "onCreate");
+        try {
+            DataManager.getInstance().init(getApplicationContext());
+        } catch (Exception e) {
+            Log.e(TAG, "init DataManager", e);
+        }
         setContentView(R.layout.activity_main);
+
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        sharedViewModel.getNotice().observe(this, msg -> {
+            if (msg != null && !msg.isEmpty()) Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        });
+        sharedViewModel.getErrorMessage().observe(this, msg -> {
+            if (msg != null && !msg.isEmpty()) Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+        });
+        sharedViewModel.getRefreshClients().observe(this, refresh -> {
+            if (refresh != null && refresh) {
+                sharedViewModel.consumeRefreshClients();
+                refreshCurrent();
+            }
+        });
+        sharedViewModel.getRefreshReceivables().observe(this, refresh -> {
+            if (refresh != null && refresh) {
+                sharedViewModel.consumeRefreshReceivables();
+                openCobros();
+            }
+        });
 
         bindBottomNavViews();
         setupBottomNav();
@@ -56,8 +88,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (activeDialog != null && activeDialog.isShowing()) {
-            activeDialog.dismiss();
+        try {
+            if (activeDialog != null && activeDialog.isShowing()) {
+                activeDialog.dismiss();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "onDestroy dialog", e);
         }
     }
 
@@ -87,124 +123,156 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void mostrarMenuCreacion() {
-        String[] opciones = {"Nuevo Presupuesto", "Nuevo Cliente", "Registrar Cobro"};
-        activeDialog = new AlertDialog.Builder(this)
-                .setTitle("¿Qué querés crear?")
-                .setItems(opciones, (dialog, which) -> {
-                    switch (which) {
-                        case 0: mostrarFormularioPresupuesto(); break;
-                        case 1: mostrarFormularioCliente(); break;
-                        case 2: mostrarFormularioCobro(); break;
-                    }
-                })
-                .create();
-        activeDialog.show();
+        try {
+            String[] opciones = {"Nuevo Presupuesto", "Nuevo Cliente", "Registrar Cobro"};
+            activeDialog = new AlertDialog.Builder(this)
+                    .setTitle("¿Qué querés crear?")
+                    .setItems(opciones, (dialog, which) -> {
+                        try {
+                            switch (which) {
+                                case 0: mostrarFormularioPresupuesto(); break;
+                                case 1: mostrarFormularioCliente(); break;
+                                case 2: mostrarFormularioCobro(); break;
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "menu crear", e);
+                        }
+                    })
+                    .create();
+            activeDialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "mostrarMenuCreacion", e);
+        }
     }
 
     private void mostrarFormularioCliente() {
-        View view = getLayoutInflater().inflate(R.layout.dialog_nuevo_cliente, null);
-        EditText etNombre = view.findViewById(R.id.etNombreCliente);
-        EditText etEmail = view.findViewById(R.id.etEmailCliente);
-        EditText etTelefono = view.findViewById(R.id.etTelefonoCliente);
+        try {
+            View view = getLayoutInflater().inflate(R.layout.dialog_nuevo_cliente, null);
+            EditText etNombre = view.findViewById(R.id.etNombreCliente);
+            EditText etEmail = view.findViewById(R.id.etEmailCliente);
+            EditText etTelefono = view.findViewById(R.id.etTelefonoCliente);
 
-        activeDialog = new AlertDialog.Builder(this)
-                .setView(view)
-                .setPositiveButton("Guardar", (dialog, which) -> {
-                    String nombre = etNombre.getText().toString().trim();
-                    String email = etEmail.getText().toString().trim();
-                    String telefono = etTelefono != null ? etTelefono.getText().toString().trim() : "";
-
-                    if (!nombre.isEmpty()) {
-                        Client nuevo = new Client(nombre, email, telefono, 0, 0, 0.0);
-                        long id = DataManager.getInstance().addClient(nuevo);
-                        if (id == -1 && DataManager.getInstance().isInitialized()) {
-                            Toast.makeText(this, "No se pudo guardar (email duplicado?)", Toast.LENGTH_SHORT).show();
-                            return;
+            activeDialog = new AlertDialog.Builder(this)
+                    .setView(view)
+                    .setPositiveButton("Guardar", (dialog, which) -> {
+                        try {
+                            String nombre = etNombre.getText().toString().trim();
+                            String email = etEmail.getText().toString().trim();
+                            String telefono = etTelefono != null ? etTelefono.getText().toString().trim() : "";
+                            sharedViewModel.createClient(nombre, email, telefono);
+                        } catch (Exception e) {
+                            Log.e(TAG, "guardar cliente", e);
                         }
-                        Toast.makeText(this, "Cliente agregado con éxito", Toast.LENGTH_SHORT).show();
-
-                        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
-                        if (currentFragment instanceof ClientesFragment) {
-                            ((ClientesFragment) currentFragment).refreshList();
-                        } else if (currentFragment instanceof NuevoPresupuestoFragment) {
-                            ((NuevoPresupuestoFragment) currentFragment).recargarClientes();
-                        } else {
-                            openClientes();
-                        }
-                    } else {
-                        Toast.makeText(this, "El nombre es obligatorio", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancelar", null)
-                .create();
-        activeDialog.show();
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .create();
+            activeDialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "mostrarFormularioCliente", e);
+        }
     }
 
     public void mostrarFormularioClientePublic() { mostrarFormularioCliente(); }
 
     private void mostrarFormularioPresupuesto() {
-        // 1. Cerrar o esconder el AlertDialog de opciones del FAB si aún está abierto
-        // (Tu código actual para cerrar el menú)
-
-        // 2. Navegar al nuevo Fragment en lugar de abrir el AlertDialog del presupuesto
-        NuevoPresupuestoFragment fragment = new NuevoPresupuestoFragment();
-
-        getSupportFragmentManager()
-                .beginTransaction()
-                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
-                .replace(R.id.fragmentContainer, fragment)
-                .addToBackStack(null) // Importante para poder volver atrás
-                .commit();
+        try {
+            NuevoPresupuestoFragment fragment = new NuevoPresupuestoFragment();
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.fade_in, android.R.anim.fade_out)
+                    .replace(R.id.fragmentContainer, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        } catch (Exception e) {
+            Log.e(TAG, "mostrarFormularioPresupuesto", e);
+        }
     }
 
     private void mostrarFormularioCobro() {
-        View view = getLayoutInflater().inflate(R.layout.dialog_nuevo_cobro, null);
-        Spinner spinner = view.findViewById(R.id.spinnerClienteCobro);
-        Button btnAtajo = view.findViewById(R.id.btnAtajoClienteCobro);
-        EditText etCodigo = view.findViewById(R.id.etCodigoCobro);
-        EditText etMonto = view.findViewById(R.id.etMontoCobro);
+        try {
+            View view = getLayoutInflater().inflate(R.layout.dialog_nuevo_cobro, null);
+            Spinner spinner = view.findViewById(R.id.spinnerClienteCobro);
+            Button btnAtajo = view.findViewById(R.id.btnAtajoClienteCobro);
+            EditText etCodigo = view.findViewById(R.id.etCodigoCobro);
+            EditText etMonto = view.findViewById(R.id.etMontoCobro);
 
-        ArrayAdapter<Client> spinnerAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                DataManager.getInstance().getClients());
-        spinner.setAdapter(spinnerAdapter);
+            ArrayAdapter<Client> spinnerAdapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_dropdown_item, new ArrayList<>());
+            spinner.setAdapter(spinnerAdapter);
 
-        activeDialog = new AlertDialog.Builder(this)
-                .setView(view)
-                .setPositiveButton("Registrar", (d, which) -> {
-                    Client clienteSeleccionado = (Client) spinner.getSelectedItem();
-                    String codigo = etCodigo.getText().toString().trim();
-                    String montoStr = etMonto.getText().toString().trim();
-
-                    if (clienteSeleccionado != null && !codigo.isEmpty() && !montoStr.isEmpty()) {
-                        try {
-                            double monto = Double.parseDouble(montoStr);
-                            Receivable nuevo = new Receivable(
-                                    clienteSeleccionado.getName(), codigo, "Reciente", monto, Receivable.Status.PENDIENTE);
-
-                            long rid = DataManager.getInstance().addReceivable(nuevo);
-                            if (rid == -1 && DataManager.getInstance().isInitialized()) {
-                                Toast.makeText(this, "El código debe coincidir con un presupuesto existente (1 cobro = 1 presupuesto)", Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            Toast.makeText(this, "Cobro registrado", Toast.LENGTH_SHORT).show();
-                            openCobros();
-                        } catch (NumberFormatException e) {
-                            Toast.makeText(this, "Monto inválido", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Toast.makeText(this, "Debe completar todos los datos", Toast.LENGTH_SHORT).show();
+            AppExecutors.getInstance().diskIO().execute(() -> {
+                List<Client> data = new ArrayList<>();
+                try {
+                    data = DataManager.getInstance().getClients();
+                } catch (Exception e) {
+                    Log.e(TAG, "cargar clientes cobro", e);
+                }
+                List<Client> finalData = data;
+                AppExecutors.getInstance().mainThread().execute(() -> {
+                    try {
+                        spinnerAdapter.clear();
+                        spinnerAdapter.addAll(finalData);
+                        spinnerAdapter.notifyDataSetChanged();
+                    } catch (Exception e) {
+                        Log.e(TAG, "spinner cobro", e);
                     }
-                })
-                .setNegativeButton("Cancelar", null)
-                .create();
+                });
+            });
 
-        btnAtajo.setOnClickListener(v -> {
-            activeDialog.dismiss();
-            mostrarFormularioCliente();
-        });
+            activeDialog = new AlertDialog.Builder(this)
+                    .setView(view)
+                    .setPositiveButton("Registrar", (d, which) -> {
+                        try {
+                            Client clienteSeleccionado = (Client) spinner.getSelectedItem();
+                            String codigo = etCodigo.getText().toString().trim();
+                            String montoStr = etMonto.getText().toString().trim();
 
-        activeDialog.show();
+                            if (clienteSeleccionado != null && !codigo.isEmpty() && !montoStr.isEmpty()) {
+                                try {
+                                    double monto = Double.parseDouble(montoStr);
+                                    sharedViewModel.createReceivable(
+                                            clienteSeleccionado.getName(), codigo, monto);
+                                } catch (NumberFormatException e) {
+                                    Toast.makeText(this, "Monto inválido", Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                Toast.makeText(this, "Debe completar todos los datos", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "registrar cobro", e);
+                        }
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .create();
+
+            btnAtajo.setOnClickListener(v -> {
+                try {
+                    activeDialog.dismiss();
+                } catch (Exception e) {
+                    Log.e(TAG, "atajo cliente", e);
+                }
+                mostrarFormularioCliente();
+            });
+
+            activeDialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "mostrarFormularioCobro", e);
+        }
+    }
+
+    private void refreshCurrent() {
+        try {
+            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
+            if (currentFragment instanceof ClientesFragment) {
+                ((ClientesFragment) currentFragment).refreshList();
+            } else if (currentFragment instanceof NuevoPresupuestoFragment) {
+                ((NuevoPresupuestoFragment) currentFragment).recargarClientes();
+            } else {
+                openClientes();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "refreshCurrent", e);
+        }
     }
 
     public void openClientes() { navigateTo(TAB_CLIENTES); }
@@ -212,43 +280,56 @@ public class MainActivity extends AppCompatActivity {
     public void openCobros() { navigateTo(TAB_COBROS); }
 
     private void navigateTo(int tab) {
-        if (tab == currentTab && getSupportFragmentManager().findFragmentById(R.id.fragmentContainer) != null) {
+        try {
+            if (tab == currentTab && getSupportFragmentManager().findFragmentById(R.id.fragmentContainer) != null) {
+                highlightTab(tab);
+                return;
+            }
+
+            Fragment fragment;
+            switch (tab) {
+                case TAB_INICIO: fragment = new HomeFragment(); break;
+                case TAB_PRESUPUESTOS: fragment = new PresupuestosFragment(); break;
+                case TAB_CLIENTES: fragment = new ClientesFragment(); break;
+                case TAB_COBROS: fragment = new CobrosFragment(); break;
+                case TAB_MAS: fragment = new MasFragment(); break;
+                default: fragment = new HomeFragment(); break;
+            }
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment)
+                    .commit();
+
+            currentTab = tab;
             highlightTab(tab);
-            return;
+            Log.d(TAG, "navigateTo tab=" + tab);
+        } catch (Exception e) {
+            Log.e(TAG, "navigateTo", e);
         }
-
-        Fragment fragment;
-        switch (tab) {
-            case TAB_INICIO: fragment = new HomeFragment(); break;
-            case TAB_PRESUPUESTOS: fragment = new PresupuestosFragment(); break;
-            case TAB_CLIENTES: fragment = new ClientesFragment(); break;
-            case TAB_COBROS: fragment = new CobrosFragment(); break;
-            case TAB_MAS: fragment = new MasFragment(); break;
-            default: fragment = new HomeFragment(); break;
-        }
-
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .commit();
-
-        currentTab = tab;
-        highlightTab(tab);
     }
 
     private void highlightTab(int tab) {
-        int blue = ContextCompat.getColor(this, R.color.primary_blue);
-        int gray = ContextCompat.getColor(this, R.color.text_secondary);
+        try {
+            int blue = ContextCompat.getColor(this, R.color.primary_blue);
+            int gray = ContextCompat.getColor(this, R.color.text_secondary);
 
-        setTabColor(ivNavInicio, tvNavInicio, tab == TAB_INICIO ? blue : gray);
-        setTabColor(ivNavPresupuestos, tvNavPresupuestos, tab == TAB_PRESUPUESTOS ? blue : gray);
-        setTabColor(ivNavClientes, tvNavClientes, tab == TAB_CLIENTES ? blue : gray);
-        setTabColor(ivNavCobros, tvNavCobros, tab == TAB_COBROS ? blue : gray);
-        setTabColor(ivNavMas, tvNavMas, tab == TAB_MAS ? blue : gray);
+            setTabColor(ivNavInicio, tvNavInicio, tab == TAB_INICIO ? blue : gray);
+            setTabColor(ivNavPresupuestos, tvNavPresupuestos, tab == TAB_PRESUPUESTOS ? blue : gray);
+            setTabColor(ivNavClientes, tvNavClientes, tab == TAB_CLIENTES ? blue : gray);
+            setTabColor(ivNavCobros, tvNavCobros, tab == TAB_COBROS ? blue : gray);
+            setTabColor(ivNavMas, tvNavMas, tab == TAB_MAS ? blue : gray);
+        } catch (Exception e) {
+            Log.e(TAG, "highlightTab", e);
+        }
     }
 
     private void setTabColor(ImageView icon, TextView label, int color) {
-        icon.setColorFilter(color);
-        label.setTextColor(color);
+        try {
+            icon.setColorFilter(color);
+            label.setTextColor(color);
+        } catch (Exception e) {
+            Log.e(TAG, "setTabColor", e);
+        }
     }
 }

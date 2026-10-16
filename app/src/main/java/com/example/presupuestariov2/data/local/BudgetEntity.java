@@ -13,26 +13,43 @@ import androidx.room.PrimaryKey;
         indices = {@Index("clientId"), @Index(value = "code", unique = true)})
 public class BudgetEntity {
     @PrimaryKey(autoGenerate = true)
-    public long id;
+    private long id;
 
     @ColumnInfo(name = "code")
-    public String code;
+    private String code;
 
     @ColumnInfo(name = "clientId")
-    public long clientId;
+    private long clientId;
 
     @ColumnInfo(name = "date")
-    public long date;
+    private long date;
 
     @ColumnInfo(name = "descripcion_servicio")
-    public String descripcionServicio;
+    private String descripcionServicio;
 
     @ColumnInfo(name = "total_amount")
-    public double totalAmount;
+    private double totalAmount;
 
     @ColumnInfo(name = "status")
-    public String status;
+    private String status;
 
     @ColumnInfo(name = "created_at")
-    public long createdAt;
+    private long createdAt;
+
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+    public long getClientId() { return clientId; }
+    public void setClientId(long clientId) { this.clientId = clientId; }
+    public long getDate() { return date; }
+    public void setDate(long date) { this.date = date; }
+    public String getDescripcionServicio() { return descripcionServicio; }
+    public void setDescripcionServicio(String descripcionServicio) { this.descripcionServicio = descripcionServicio; }
+    public double getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public long getCreatedAt() { return createdAt; }
+    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 }

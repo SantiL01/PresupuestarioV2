@@ -3,48 +3,41 @@ package com.example.presupuestariov2.ui.controladores;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.presupuestariov2.R;
 import com.example.presupuestariov2.ui.adaptadores.ClientAdapter;
-import com.example.presupuestariov2.data.modelos.Client;
-import com.example.presupuestariov2.data.repository.DataManager;
+import com.example.presupuestariov2.ui.controladores.base.BaseFragment;
+import com.example.presupuestariov2.ui.viewmodels.ClientesViewModel;
+import com.example.presupuestariov2.ui.viewmodels.state.UiStatus;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
-public class ClientesFragment extends Fragment {
+public class ClientesFragment extends BaseFragment {
 
-    private final List<Client> allClients = new ArrayList<>();
+    private static final String TAG = "UI_Clientes";
+
+    private ClientesViewModel viewModel;
     private ClientAdapter adapter;
     private RecyclerView rvClients;
+    private ProgressBar pbLoading;
+    private TextView tvError;
+    private TextView tvEmpty;
 
     public ClientesFragment() {}
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        refreshList();
-    }
-
-    public void refreshList() {
-        allClients.clear();
-        allClients.addAll(DataManager.getInstance().getClients());
-        if (adapter != null) {
-            adapter.updateData(allClients);
-        }
-    }
 
     @Nullable
     @Override
@@ -54,20 +47,74 @@ public class ClientesFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    protected void setupViews(View root) {
+        Log.d(TAG, "setupViews");
+        try {
+            rvClients = root.findViewById(R.id.rvClients);
+            pbLoading = root.findViewById(R.id.pbLoading);
+            tvError = root.findViewById(R.id.tvError);
+            tvEmpty = root.findViewById(R.id.tvEmpty);
+            rvClients.setLayoutManager(new LinearLayoutManager(getContext()));
+            adapter = new ClientAdapter(new ArrayList<>(), client -> {
+                try {
+                    Toast.makeText(getContext(), "Abrir ficha de " + client.getName(), Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Log.e(TAG, "click cliente", e);
+                }
+            });
+            rvClients.setAdapter(adapter);
 
-        allClients.clear();
-        allClients.addAll(DataManager.getInstance().getClients());
+            EditText etSearch = root.findViewById(R.id.etSearchClient);
+            etSearch.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (viewModel != null) viewModel.setQuery(s.toString());
+                }
+                @Override public void afterTextChanged(Editable s) {}
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "setupViews error", e);
+        }
+    }
 
-        rvClients = view.findViewById(R.id.rvClients);
-        rvClients.setLayoutManager(new LinearLayoutManager(getContext()));
+    @Override
+    protected void observeViewModel() {
+        viewModel = new ViewModelProvider(this).get(ClientesViewModel.class);
 
-        adapter = new ClientAdapter(new ArrayList<>(allClients), client ->
-                Toast.makeText(getContext(), "Abrir ficha de " + client.getName(), Toast.LENGTH_SHORT).show());
-        rvClients.setAdapter(adapter);
+        viewModel.getClients().observe(getViewLifecycleOwner(), data -> {
+            try {
+                if (adapter != null && data != null) adapter.updateData(data);
+            } catch (Exception e) {
+                Log.e(TAG, "update lista", e);
+            }
+        });
 
-        setupSearch(view);
+        viewModel.getStatus().observe(getViewLifecycleOwner(), state -> {
+            renderStatus(state, pbLoading, rvClients, tvEmpty, "Sin clientes.");
+            if (tvError != null && state != UiStatus.ERROR) tvError.setVisibility(View.GONE);
+        });
+
+        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty()) {
+                showError(msg);
+                if (tvError != null) {
+                    tvError.setText(msg);
+                    tvError.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        viewModel.load();
+    }
+
+    public void refreshList() {
+        if (viewModel != null) viewModel.load();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) viewModel.load();
     }
 
     @Override
@@ -75,29 +122,8 @@ public class ClientesFragment extends Fragment {
         super.onDestroyView();
         rvClients = null;
         adapter = null;
-    }
-
-    private void setupSearch(View root) {
-        EditText etSearch = root.findViewById(R.id.etSearchClient);
-        etSearch.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterClients(s.toString());
-            }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-    }
-
-    private void filterClients(String query) {
-        String normalized = query.trim().toLowerCase(Locale.getDefault());
-        List<Client> filtered = new ArrayList<>();
-        for (Client client : allClients) {
-            boolean matchesName = client.getName().toLowerCase(Locale.getDefault()).contains(normalized);
-            boolean matchesEmail = client.getEmail().toLowerCase(Locale.getDefault()).contains(normalized);
-            if (matchesName || matchesEmail) {
-                filtered.add(client);
-            }
-        }
-        adapter.updateData(filtered);
+        pbLoading = null;
+        tvError = null;
+        tvEmpty = null;
     }
 }

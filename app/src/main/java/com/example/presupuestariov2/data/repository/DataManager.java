@@ -1,7 +1,7 @@
 package com.example.presupuestariov2.data.repository;
 
 import android.content.Context;
-import android.database.sqlite.SQLiteConstraintException;
+import android.util.Log;
 
 import com.example.presupuestariov2.data.local.AppDatabase;
 import com.example.presupuestariov2.data.local.BudgetDao;
@@ -9,26 +9,24 @@ import com.example.presupuestariov2.data.local.BudgetEntity;
 import com.example.presupuestariov2.data.local.BudgetItemEntity;
 import com.example.presupuestariov2.data.local.ClientDao;
 import com.example.presupuestariov2.data.local.ClientEntity;
-import com.example.presupuestariov2.data.local.ReceivableDao;
 import com.example.presupuestariov2.data.local.ReceivableEntity;
 import com.example.presupuestariov2.data.modelos.Budget;
 import com.example.presupuestariov2.data.modelos.BudgetItem;
 import com.example.presupuestariov2.data.modelos.Client;
 import com.example.presupuestariov2.data.modelos.Receivable;
+import com.example.presupuestariov2.utils.FormatUtils;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class DataManager {
+
+    private static final String TAG = "Repo_DataManager";
     private static volatile DataManager instance;
 
     private AppDatabase db;
     private boolean initialized = false;
 
-    // Fallback en memoria por si alguien llama sin init (tests)
     private final List<Client> memClients = new ArrayList<>();
     private final List<Budget> memBudgets = new ArrayList<>();
     private final List<Receivable> memReceivables = new ArrayList<>();
@@ -48,89 +46,106 @@ public class DataManager {
 
     public synchronized void init(Context context) {
         if (initialized) return;
-        db = AppDatabase.getInstance(context);
-        initialized = true;
-        seedIfEmpty();
+        try {
+            db = AppDatabase.getInstance(context);
+            initialized = true;
+            seedIfEmpty();
+            Log.d(TAG, "init ok");
+        } catch (Exception e) {
+            Log.e(TAG, "init error", e);
+        }
     }
 
     public boolean isInitialized() { return initialized; }
 
-    // ---------- Lecturas ----------
-
     public List<Client> getClients() {
-        if (!initialized) return memClients;
-        List<ClientEntity> entities = db.clientDao().getAll();
-        List<Client> out = new ArrayList<>();
-        for (ClientEntity e : entities) {
-            int budgetsCount = countBudgetsForClient(e.id);
-            double total = sumTotalsForClient(e.id);
-            Client c = new Client(e.name, e.email, e.phone != null ? e.phone : "",
-                    budgetsCount, 0, total);
-            c.setDbId(e.id);
-            out.add(c);
+        if (!initialized) return new ArrayList<>(memClients);
+        try {
+            List<ClientEntity> entities = db.clientDao().getAll();
+            List<Client> out = new ArrayList<>();
+            for (ClientEntity e : entities) {
+                int budgetsCount = countBudgetsForClient(e.getId());
+                double total = sumTotalsForClient(e.getId());
+                String phone = e.getPhone() != null ? e.getPhone() : "";
+                Client c = new Client(e.getName(), e.getEmail(), phone,
+                        budgetsCount, 0, total);
+                c.setDbId(e.getId());
+                out.add(c);
+            }
+            return out;
+        } catch (Exception e) {
+            Log.e(TAG, "getClients", e);
+            throw e;
         }
-        return out;
     }
 
     public List<Budget> getBudgets() {
-        if (!initialized) return memBudgets;
-        List<BudgetDao.BudgetWithItems> rows = db.budgetDao().getBudgetsWithItems();
-        List<ClientEntity> clients = db.clientDao().getAll();
-        List<Budget> out = new ArrayList<>();
-        for (BudgetDao.BudgetWithItems row : rows) {
-            String clientName = resolveClientName(clients, row.budget.clientId);
-            List<BudgetItem> items = new ArrayList<>();
-            if (row.items != null) {
-                for (BudgetItemEntity ie : row.items) {
-                    items.add(new BudgetItem(ie.descripcion, ie.cantidad,
-                            ie.unidadMedida, ie.precioUnitario));
+        if (!initialized) return new ArrayList<>(memBudgets);
+        try {
+            List<BudgetDao.BudgetWithItems> rows = db.budgetDao().getBudgetsWithItems();
+            List<ClientEntity> clients = db.clientDao().getAll();
+            List<Budget> out = new ArrayList<>();
+            for (BudgetDao.BudgetWithItems row : rows) {
+                if (row == null || row.budget == null) continue;
+                String clientName = resolveClientName(clients, row.budget.getClientId());
+                List<BudgetItem> items = new ArrayList<>();
+                if (row.items != null) {
+                    for (BudgetItemEntity ie : row.items) {
+                        items.add(new BudgetItem(ie.getDescripcion(), ie.getCantidad(),
+                                ie.getUnidadMedida(), ie.getPrecioUnitario()));
+                    }
                 }
+                Budget b;
+                try {
+                    b = new Budget(row.budget.getCode(), clientName,
+                            FormatUtils.dateText(row.budget.getDate()), row.budget.getTotalAmount(),
+                            Budget.Status.valueOf(row.budget.getStatus()),
+                            row.budget.getDescripcionServicio(), items);
+                } catch (Exception ex) {
+                    b = new Budget(row.budget.getCode(), clientName,
+                            FormatUtils.dateText(row.budget.getDate()), row.budget.getTotalAmount(),
+                            Budget.Status.BORRADOR,
+                            row.budget.getDescripcionServicio(), items);
+                }
+                b.setDbId(row.budget.getId());
+                b.setClientId(row.budget.getClientId());
+                out.add(b);
             }
-            Budget b;
-            try {
-                b = new Budget(row.budget.code, clientName,
-                        formatDate(row.budget.date), row.budget.totalAmount,
-                        Budget.Status.valueOf(row.budget.status),
-                        row.budget.descripcionServicio, items);
-            } catch (Exception e) {
-                b = new Budget(row.budget.code, clientName,
-                        formatDate(row.budget.date), row.budget.totalAmount,
-                        Budget.Status.BORRADOR,
-                        row.budget.descripcionServicio, items);
-            }
-            b.setDbId(row.budget.id);
-            b.setClientId(row.budget.clientId);
-            out.add(b);
+            return out;
+        } catch (Exception e) {
+            Log.e(TAG, "getBudgets", e);
+            throw e;
         }
-        return out;
     }
 
     public List<Receivable> getReceivables() {
-        if (!initialized) return memReceivables;
-        List<ReceivableEntity> entities = db.receivableDao().getAll();
-        List<ClientEntity> clients = db.clientDao().getAll();
-        List<Receivable> out = new ArrayList<>();
-        for (ReceivableEntity e : entities) {
-            String clientName = resolveClientName(clients, e.clientId);
-            Receivable r;
-            try {
-                r = new Receivable(clientName, e.code, "Vence " + formatDate(e.dueDate),
-                        e.amount, Receivable.Status.valueOf(e.status));
-            } catch (Exception ex) {
-                r = new Receivable(clientName, e.code, "Vence " + formatDate(e.dueDate),
-                        e.amount, Receivable.Status.PENDIENTE);
+        if (!initialized) return new ArrayList<>(memReceivables);
+        try {
+            List<ReceivableEntity> entities = db.receivableDao().getAll();
+            List<ClientEntity> clients = db.clientDao().getAll();
+            List<Receivable> out = new ArrayList<>();
+            for (ReceivableEntity e : entities) {
+                String clientName = resolveClientName(clients, e.getClientId());
+                Receivable r;
+                try {
+                    r = new Receivable(clientName, e.getCode(), "Vence " + FormatUtils.dateText(e.getDueDate()),
+                            e.getAmount(), Receivable.Status.valueOf(e.getStatus()));
+                } catch (Exception ex) {
+                    r = new Receivable(clientName, e.getCode(), "Vence " + FormatUtils.dateText(e.getDueDate()),
+                            e.getAmount(), Receivable.Status.PENDIENTE);
+                }
+                r.setDbId(e.getId());
+                r.setClientId(e.getClientId());
+                r.setBudgetId(e.getBudgetId());
+                out.add(r);
             }
-            r.setDbId(e.id);
-            r.setClientId(e.clientId);
-            r.setBudgetId(e.budgetId);
-            out.add(r);
+            return out;
+        } catch (Exception e) {
+            Log.e(TAG, "getReceivables", e);
+            throw e;
         }
-        return out;
     }
 
-    // ---------- Escrituras ----------
-
-    /** @return dbId o -1 si email duplicado */
     public long addClient(Client c) {
         if (c == null) return -1;
         if (!initialized) {
@@ -138,20 +153,21 @@ public class DataManager {
             return -1;
         }
         ClientEntity e = new ClientEntity();
-        e.name = c.getName();
-        e.email = c.getEmail();
-        e.phone = c.getPhone() != null ? c.getPhone() : "";
-        e.createdAt = System.currentTimeMillis();
+        e.setName(c.getName());
+        e.setEmail(c.getEmail());
+        e.setPhone(c.getPhone() != null ? c.getPhone() : "");
+        e.setCreatedAt(System.currentTimeMillis());
         try {
             long id = db.clientDao().insert(e);
             c.setDbId(id);
+            Log.d(TAG, "addClient ok id=" + id);
             return id;
         } catch (Exception ex) {
+            Log.e(TAG, "addClient error", ex);
             return -1;
         }
     }
 
-    /** Guarda presupuesto + ítems + crea su cobro 1=1. @return budgetDbId o -1 */
     public long addBudget(Budget b) {
         if (b == null) return -1;
         if (!initialized) {
@@ -162,53 +178,56 @@ public class DataManager {
         if (clientId == -1) return -1;
 
         BudgetEntity be = new BudgetEntity();
-        be.code = b.getId();
-        be.clientId = clientId;
-        be.date = System.currentTimeMillis();
-        be.descripcionServicio = b.getDescripcionServicio();
-        be.totalAmount = b.getTotalAmount();
-        be.status = b.getStatus() != null ? b.getStatus().name() : Budget.Status.BORRADOR.name();
-        be.createdAt = System.currentTimeMillis();
+        be.setCode(b.getId());
+        be.setClientId(clientId);
+        be.setDate(System.currentTimeMillis());
+        be.setDescripcionServicio(b.getDescripcionServicio());
+        be.setTotalAmount(b.getTotalAmount());
+        be.setStatus(b.getStatus() != null ? b.getStatus().name() : Budget.Status.BORRADOR.name());
+        be.setCreatedAt(System.currentTimeMillis());
         long budgetDbId;
         try {
             budgetDbId = db.budgetDao().insertBudget(be);
         } catch (Exception e) {
+            Log.e(TAG, "addBudget insert", e);
             return -1;
         }
         b.setDbId(budgetDbId);
         b.setClientId(clientId);
 
-        List<BudgetItemEntity> itemEntities = new ArrayList<>();
-        for (BudgetItem it : b.getItems()) {
-            BudgetItemEntity ie = new BudgetItemEntity();
-            ie.budgetId = budgetDbId;
-            ie.descripcion = it.getDescripcion();
-            ie.cantidad = it.getCantidad();
-            ie.unidadMedida = it.getUnidadMedida();
-            ie.precioUnitario = it.getPrecioUnitario();
-            itemEntities.add(ie);
-        }
-        if (!itemEntities.isEmpty()) {
-            db.budgetDao().insertItems(itemEntities);
+        try {
+            List<BudgetItemEntity> itemEntities = new ArrayList<>();
+            for (BudgetItem it : b.getItems()) {
+                BudgetItemEntity ie = new BudgetItemEntity();
+                ie.setBudgetId(budgetDbId);
+                ie.setDescripcion(it.getDescripcion());
+                ie.setCantidad(it.getCantidad());
+                ie.setUnidadMedida(it.getUnidadMedida());
+                ie.setPrecioUnitario(it.getPrecioUnitario());
+                itemEntities.add(ie);
+            }
+            if (!itemEntities.isEmpty()) {
+                db.budgetDao().insertItems(itemEntities);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "addBudget items", e);
         }
 
-        // Regla 1 cobro = 1 presupuesto: cobro espejo automático
         ReceivableEntity re = new ReceivableEntity();
-        re.code = be.code;
-        re.clientId = clientId;
-        re.budgetId = budgetDbId;
-        re.amount = be.totalAmount;
-        re.dueDate = System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000;
-        re.status = Receivable.Status.PENDIENTE.name();
+        re.setCode(be.getCode());
+        re.setClientId(clientId);
+        re.setBudgetId(budgetDbId);
+        re.setAmount(be.getTotalAmount());
+        re.setDueDate(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+        re.setStatus(Receivable.Status.PENDIENTE.name());
         try {
             db.receivableDao().insert(re);
         } catch (Exception ignored) {
-            // Si el código ya existía como cobro manual, se mantiene el existente
         }
+        Log.d(TAG, "addBudget ok id=" + budgetDbId);
         return budgetDbId;
     }
 
-    /** Cobro manual. Si el código coincide con un presupuesto, lo vincula (respeta 1=1). */
     public long addReceivable(Receivable r) {
         if (r == null) return -1;
         if (!initialized) {
@@ -217,128 +236,156 @@ public class DataManager {
         }
         long clientId = resolveClientIdByName(r.getClientName());
         if (clientId == -1) return -1;
-        BudgetEntity linked = db.budgetDao().getByCode(r.getCode());
-        long budgetId = linked != null ? linked.id : -1;
+        BudgetEntity linked;
+        try {
+            linked = db.budgetDao().getByCode(r.getCode());
+        } catch (Exception e) {
+            Log.e(TAG, "addReceivable lookup", e);
+            return -1;
+        }
+        long budgetId = linked != null ? linked.getId() : -1;
+        if (budgetId == -1) return -1;
 
         ReceivableEntity e = new ReceivableEntity();
-        e.code = r.getCode();
-        e.clientId = clientId;
-        e.budgetId = budgetId != -1 ? budgetId : 0;
-        // Si no hay presupuesto vinculado, no se puede cumplir FK -> se omite cobro huérfano
-        if (budgetId == -1) return -1;
-        e.amount = r.getAmount();
-        e.dueDate = System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000;
-        e.status = r.getStatus() != null ? r.getStatus().name() : Receivable.Status.PENDIENTE.name();
+        e.setCode(r.getCode());
+        e.setClientId(clientId);
+        e.setBudgetId(budgetId);
+        e.setAmount(r.getAmount());
+        e.setDueDate(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+        e.setStatus(r.getStatus() != null ? r.getStatus().name() : Receivable.Status.PENDIENTE.name());
         try {
             long id = db.receivableDao().insert(e);
             r.setDbId(id);
             r.setClientId(clientId);
             r.setBudgetId(budgetId);
+            Log.d(TAG, "addReceivable ok id=" + id);
             return id;
         } catch (Exception ex) {
+            Log.e(TAG, "addReceivable insert", ex);
             return -1;
         }
     }
 
     public void updateBudgetStatus(Budget b) {
         if (b == null || !initialized || b.getDbId() == 0) return;
-        db.budgetDao().updateStatus(b.getDbId(),
-                b.getStatus() != null ? b.getStatus().name() : Budget.Status.BORRADOR.name());
+        try {
+            db.budgetDao().updateStatus(b.getDbId(),
+                    b.getStatus() != null ? b.getStatus().name() : Budget.Status.BORRADOR.name());
+        } catch (Exception e) {
+            Log.e(TAG, "updateBudgetStatus", e);
+            throw e;
+        }
     }
 
     public void updateReceivableStatus(Receivable r) {
         if (r == null || !initialized || r.getDbId() == 0) return;
-        db.receivableDao().updateStatus(r.getDbId(),
-                r.getStatus() != null ? r.getStatus().name() : Receivable.Status.PENDIENTE.name());
+        try {
+            db.receivableDao().updateStatus(r.getDbId(),
+                    r.getStatus() != null ? r.getStatus().name() : Receivable.Status.PENDIENTE.name());
+        } catch (Exception e) {
+            Log.e(TAG, "updateReceivableStatus", e);
+            throw e;
+        }
     }
-
-    // ---------- Helpers ----------
 
     private long resolveClientIdByName(String name) {
         if (name == null) return -1;
-        ClientEntity e = db.clientDao().getByName(name);
-        return e != null ? e.id : -1;
+        try {
+            ClientEntity e = db.clientDao().getByName(name);
+            return e != null ? e.getId() : -1;
+        } catch (Exception e) {
+            Log.e(TAG, "resolveClient", e);
+            return -1;
+        }
     }
 
     private String resolveClientName(List<ClientEntity> clients, long clientId) {
-        for (ClientEntity c : clients) {
-            if (c.id == clientId) return c.name;
+        try {
+            for (ClientEntity c : clients) {
+                if (c.getId() == clientId) return c.getName();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "resolveClientName", e);
         }
         return "Desconocido";
     }
 
     private int countBudgetsForClient(long clientId) {
         int count = 0;
-        for (BudgetEntity b : db.budgetDao().getAllBudgets()) {
-            if (b.clientId == clientId) count++;
+        try {
+            for (BudgetEntity b : db.budgetDao().getAllBudgets()) {
+                if (b.getClientId() == clientId) count++;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "countBudgets", e);
         }
         return count;
     }
 
     private double sumTotalsForClient(long clientId) {
         double total = 0;
-        for (BudgetEntity b : db.budgetDao().getAllBudgets()) {
-            if (b.clientId == clientId) total += b.totalAmount;
+        try {
+            for (BudgetEntity b : db.budgetDao().getAllBudgets()) {
+                if (b.getClientId() == clientId) total += b.getTotalAmount();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "sumTotals", e);
         }
         return total;
     }
 
-    private String formatDate(long millis) {
-        try {
-            return new SimpleDateFormat("dd MMM yyyy", new Locale("es", "ES"))
-                    .format(new Date(millis));
-        } catch (Exception e) {
-            return "Hoy";
-        }
-    }
-
     private void seedIfEmpty() {
-        ClientDao clientDao = db.clientDao();
-        if (clientDao.count() > 0) return;
-
-        ClientEntity pedro = new ClientEntity();
-        pedro.name = "Pedro García";
-        pedro.email = "pedro@email.com";
-        pedro.phone = "";
-        pedro.createdAt = System.currentTimeMillis();
-        long pedroId = clientDao.insert(pedro);
-
-        ClientEntity maria = new ClientEntity();
-        maria.name = "María López";
-        maria.email = "maria@email.com";
-        maria.phone = "";
-        maria.createdAt = System.currentTimeMillis();
-        clientDao.insert(maria);
-
-        BudgetEntity budget = new BudgetEntity();
-        budget.code = "#00125";
-        budget.clientId = pedroId;
-        budget.date = System.currentTimeMillis();
-        budget.descripcionServicio = "Presupuesto inicial de ejemplo";
-        budget.totalAmount = 450000;
-        budget.status = Budget.Status.APROBADO.name();
-        budget.createdAt = System.currentTimeMillis();
-        long budgetId = db.budgetDao().insertBudget(budget);
-
-        BudgetItemEntity item = new BudgetItemEntity();
-        item.budgetId = budgetId;
-        item.descripcion = "Servicio inicial";
-        item.cantidad = 1;
-        item.unidadMedida = "global";
-        item.precioUnitario = 450000;
-        List<BudgetItemEntity> items = new ArrayList<>();
-        items.add(item);
-        db.budgetDao().insertItems(items);
-
-        ReceivableEntity receivable = new ReceivableEntity();
-        receivable.code = "#00125";
-        receivable.clientId = pedroId;
-        receivable.budgetId = budgetId;
-        receivable.amount = 450000;
-        receivable.dueDate = System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000;
-        receivable.status = Receivable.Status.PENDIENTE.name();
         try {
-            db.receivableDao().insert(receivable);
-        } catch (Exception ignored) {}
+            ClientDao clientDao = db.clientDao();
+            if (clientDao.count() > 0) return;
+
+            ClientEntity pedro = new ClientEntity();
+            pedro.setName("Pedro García");
+            pedro.setEmail("pedro@email.com");
+            pedro.setPhone("");
+            pedro.setCreatedAt(System.currentTimeMillis());
+            long pedroId = clientDao.insert(pedro);
+
+            ClientEntity maria = new ClientEntity();
+            maria.setName("María López");
+            maria.setEmail("maria@email.com");
+            maria.setPhone("");
+            maria.setCreatedAt(System.currentTimeMillis());
+            clientDao.insert(maria);
+
+            BudgetEntity budget = new BudgetEntity();
+            budget.setCode("#00125");
+            budget.setClientId(pedroId);
+            budget.setDate(System.currentTimeMillis());
+            budget.setDescripcionServicio("Presupuesto inicial de ejemplo");
+            budget.setTotalAmount(450000);
+            budget.setStatus(Budget.Status.APROBADO.name());
+            budget.setCreatedAt(System.currentTimeMillis());
+            long budgetId = db.budgetDao().insertBudget(budget);
+
+            BudgetItemEntity item = new BudgetItemEntity();
+            item.setBudgetId(budgetId);
+            item.setDescripcion("Servicio inicial");
+            item.setCantidad(1);
+            item.setUnidadMedida("global");
+            item.setPrecioUnitario(450000);
+            List<BudgetItemEntity> items = new ArrayList<>();
+            items.add(item);
+            db.budgetDao().insertItems(items);
+
+            ReceivableEntity receivable = new ReceivableEntity();
+            receivable.setCode("#00125");
+            receivable.setClientId(pedroId);
+            receivable.setBudgetId(budgetId);
+            receivable.setAmount(450000);
+            receivable.setDueDate(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+            receivable.setStatus(Receivable.Status.PENDIENTE.name());
+            try {
+                db.receivableDao().insert(receivable);
+            } catch (Exception ignored) {}
+            Log.d(TAG, "seed ok");
+        } catch (Exception e) {
+            Log.e(TAG, "seed", e);
+        }
     }
 }

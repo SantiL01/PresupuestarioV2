@@ -9,17 +9,28 @@ import androidx.room.PrimaryKey;
         indices = {@Index(value = "email", unique = true)})
 public class ClientEntity {
     @PrimaryKey(autoGenerate = true)
-    public long id;
+    private long id;
 
     @ColumnInfo(name = "name")
-    public String name;
+    private String name;
 
     @ColumnInfo(name = "email")
-    public String email;
+    private String email;
 
     @ColumnInfo(name = "phone", defaultValue = "")
-    public String phone;
+    private String phone;
 
     @ColumnInfo(name = "created_at")
-    public long createdAt;
+    private long createdAt;
+
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public long getCreatedAt() { return createdAt; }
+    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 }

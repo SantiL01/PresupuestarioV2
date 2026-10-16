@@ -55,6 +55,32 @@
             android:imeOptions="actionSearch" />
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/pbLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="13sp"
+        android:textColor="#B00020"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Sin resultados."
+        android:textSize="13sp"
+        android:visibility="gone" />
+
     <!-- ===== Lista de clientes ===== -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvClients"

@@ -13,20 +13,33 @@ import androidx.room.PrimaryKey;
         indices = {@Index("budgetId")})
 public class BudgetItemEntity {
     @PrimaryKey(autoGenerate = true)
-    public long id;
+    private long id;
 
     @ColumnInfo(name = "budgetId")
-    public long budgetId;
+    private long budgetId;
 
     @ColumnInfo(name = "descripcion")
-    public String descripcion;
+    private String descripcion;
 
     @ColumnInfo(name = "cantidad")
-    public double cantidad;
+    private double cantidad;
 
     @ColumnInfo(name = "unidad_medida")
-    public String unidadMedida;
+    private String unidadMedida;
 
     @ColumnInfo(name = "precio_unitario")
-    public double precioUnitario;
+    private double precioUnitario;
+
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
+    public long getBudgetId() { return budgetId; }
+    public void setBudgetId(long budgetId) { this.budgetId = budgetId; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public double getCantidad() { return cantidad; }
+    public void setCantidad(double cantidad) { this.cantidad = cantidad; }
+    public String getUnidadMedida() { return unidadMedida; }
+    public void setUnidadMedida(String unidadMedida) { this.unidadMedida = unidadMedida; }
+    public double getPrecioUnitario() { return precioUnitario; }
+    public void setPrecioUnitario(double precioUnitario) { this.precioUnitario = precioUnitario; }
 }

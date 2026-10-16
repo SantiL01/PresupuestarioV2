@@ -24,9 +24,6 @@ public abstract class AppDatabase extends RoomDatabase {
                                     context.getApplicationContext(),
                                     AppDatabase.class, "presupuestario.db")
                             .fallbackToDestructiveMigration()
-                            // Proyecto educativo: consultas simples en hilo principal
-                            // para no reescribir todos los Fragments a LiveData.
-                            .allowMainThreadQueries()
                             .build();
                 }
             }

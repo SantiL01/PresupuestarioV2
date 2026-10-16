@@ -6,102 +6,130 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.presupuestariov2.R;
 import com.example.presupuestariov2.ui.adaptadores.ReceivableAdapter;
-import com.example.presupuestariov2.data.repository.DataManager;
 import com.example.presupuestariov2.data.modelos.Receivable;
+import com.example.presupuestariov2.ui.controladores.base.BaseFragment;
+import com.example.presupuestariov2.ui.viewmodels.CobrosViewModel;
+import com.example.presupuestariov2.ui.viewmodels.state.UiStatus;
 
 import java.util.ArrayList;
-import java.util.List;
 
-public class CobrosFragment extends Fragment {
+public class CobrosFragment extends BaseFragment {
 
-    private static final String TAG = "CicloVida_Cobros";
+    private static final String TAG = "UI_Cobros";
+
+    private CobrosViewModel viewModel;
     private RecyclerView rvCobros;
     private ReceivableAdapter adapter;
-    private final List<Receivable> listaCobros = new ArrayList<>();
+    private ProgressBar pbLoading;
+    private TextView tvError;
+    private TextView tvEmpty;
 
-    public CobrosFragment() {
-        // Constructor vacío requerido
-    }
+    public CobrosFragment() {}
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        Log.d(TAG, "onAttach: Fragmento adjuntado al Activity");
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate: Fragmento creado, cargando datos desde DataManager");
-
-        // Sincronizamos con el DataManager global para reflejar cobros nuevos si se agregaron
-        listaCobros.clear();
-        listaCobros.addAll(DataManager.getInstance().getReceivables());
+        Log.d(TAG, "onAttach");
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        Log.d(TAG, "onCreateView: Inflando la vista XML");
+        Log.d(TAG, "onCreateView");
         return inflater.inflate(R.layout.fragment_cobros, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        Log.d(TAG, "onViewCreated: Vinculando RecyclerView y adaptador");
-
-        // 1. ¡Crucial! Inicializar la vista del RecyclerView desde el layout inflado
-        rvCobros = view.findViewById(R.id.rvCobros);
-
-        if (rvCobros != null) {
+    protected void setupViews(View root) {
+        Log.d(TAG, "setupViews");
+        try {
+            rvCobros = root.findViewById(R.id.rvCobros);
+            pbLoading = root.findViewById(R.id.pbLoading);
+            tvError = root.findViewById(R.id.tvError);
+            tvEmpty = root.findViewById(R.id.tvEmpty);
             rvCobros.setLayoutManager(new LinearLayoutManager(getContext()));
-
-            // 2. Inicializar el adaptador usando la lista sincronizada
-            adapter = new ReceivableAdapter(listaCobros, receivable -> {
-                String[] opciones = {"Pendiente", "Vencido", "Pagado"};
-                new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                        .setTitle("Actualizar Cobro")
-                        .setItems(opciones, (dialog, which) -> {
-                            receivable.setStatus(Receivable.Status.values()[which]);
-                            DataManager.getInstance().updateReceivableStatus(receivable);
-                            adapter.notifyDataSetChanged();
-                        })
-                        .show();
+            adapter = new ReceivableAdapter(new ArrayList<>(), receivable -> {
+                try {
+                    String[] opciones = {"Pendiente", "Vencido", "Pagado"};
+                    new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                            .setTitle("Actualizar Cobro")
+                            .setItems(opciones, (dialog, which) -> {
+                                try {
+                                    viewModel.changeStatus(receivable, Receivable.Status.values()[which]);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "cambio estado", e);
+                                }
+                            })
+                            .show();
+                } catch (Exception e) {
+                    Log.e(TAG, "dialog estado", e);
+                }
             });
             rvCobros.setAdapter(adapter);
+        } catch (Exception e) {
+            Log.e(TAG, "setupViews error", e);
         }
+    }
+
+    @Override
+    protected void observeViewModel() {
+        viewModel = new ViewModelProvider(this).get(CobrosViewModel.class);
+
+        viewModel.getReceivables().observe(getViewLifecycleOwner(), data -> {
+            try {
+                if (adapter != null && data != null) {
+                    adapter.updateData(data);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "update lista", e);
+            }
+        });
+
+        viewModel.getStatus().observe(getViewLifecycleOwner(), state -> {
+            renderStatus(state, pbLoading, rvCobros, tvEmpty, "Sin cobros registrados.");
+            if (tvError != null && state != UiStatus.ERROR) tvError.setVisibility(View.GONE);
+        });
+
+        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty()) {
+                showError(msg);
+                if (tvError != null) {
+                    tvError.setText(msg);
+                    tvError.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        viewModel.load();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: Actualizando datos de cobros");
-
-        // Refrescamos datos al volver a primer plano
-        listaCobros.clear();
-        listaCobros.addAll(DataManager.getInstance().getReceivables());
-        if (adapter != null) {
-            adapter.notifyDataSetChanged();
-        }
+        Log.d(TAG, "onResume");
+        if (viewModel != null) viewModel.load();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        Log.d(TAG, "onDestroyView: Limpiando referencias de vistas");
-        // Evitamos fugas de memoria anulando el RecyclerView
+        Log.d(TAG, "onDestroyView");
         rvCobros = null;
         adapter = null;
+        pbLoading = null;
+        tvError = null;
+        tvEmpty = null;
     }
 }

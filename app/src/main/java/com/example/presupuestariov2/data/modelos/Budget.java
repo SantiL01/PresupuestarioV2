@@ -1,11 +1,8 @@
 package com.example.presupuestariov2.data.modelos;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-/**
- * Representa un Presupuesto en la pantalla "Presupuestos".
- */
 public class Budget {
 
     public enum Status {
@@ -71,7 +68,11 @@ public class Budget {
     }
 
     public List<BudgetItem> getItems() {
-        return items;
+        return Collections.unmodifiableList(items);
+    }
+
+    public List<BudgetItem> getItemsCopy() {
+        return new ArrayList<>(items);
     }
 
     public long getDbId() { return dbId; }
