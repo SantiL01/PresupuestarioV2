@@ -23,6 +23,7 @@ import com.example.presupuestariov2.data.modelos.Client;
 import com.example.presupuestariov2.data.repository.DataManager;
 import com.example.presupuestariov2.ui.viewmodels.SharedViewModel;
 import com.example.presupuestariov2.utils.AppExecutors;
+import com.example.presupuestariov2.utils.PreferencesManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -48,13 +49,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
+        // Antes de super.onCreate: los fragments restaurados ya encuentran la base lista
         try {
+            PreferencesManager.getInstance().init(getApplicationContext());
             DataManager.getInstance().init(getApplicationContext());
         } catch (Exception e) {
             Log.e(TAG, "init DataManager", e);
         }
+        super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_main);
 
         sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);

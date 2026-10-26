@@ -14,7 +14,9 @@ import com.example.presupuestariov2.data.modelos.Budget;
 import com.example.presupuestariov2.data.modelos.BudgetItem;
 import com.example.presupuestariov2.data.modelos.Client;
 import com.example.presupuestariov2.data.modelos.Receivable;
+import com.example.presupuestariov2.utils.AppExecutors;
 import com.example.presupuestariov2.utils.FormatUtils;
+import com.example.presupuestariov2.utils.PreferencesManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +26,9 @@ public class DataManager {
     private static final String TAG = "Repo_DataManager";
     private static volatile DataManager instance;
 
-    private AppDatabase db;
-    private boolean initialized = false;
-
-    private final List<Client> memClients = new ArrayList<>();
-    private final List<Budget> memBudgets = new ArrayList<>();
-    private final List<Receivable> memReceivables = new ArrayList<>();
+    private volatile AppDatabase db;
+    private volatile boolean initialized = false;
+    private volatile boolean seeded = false;
 
     private DataManager() {}
 
@@ -47,9 +46,10 @@ public class DataManager {
     public synchronized void init(Context context) {
         if (initialized) return;
         try {
+            // build() no abre la base, es seguro en el hilo principal
             db = AppDatabase.getInstance(context);
             initialized = true;
-            seedIfEmpty();
+            AppExecutors.getInstance().diskIO().execute(this::ensureSeeded);
             Log.d(TAG, "init ok");
         } catch (Exception e) {
             Log.e(TAG, "init error", e);
@@ -58,8 +58,18 @@ public class DataManager {
 
     public boolean isInitialized() { return initialized; }
 
+    // Garantiza que el seed termine antes de cualquier lectura (siempre desde diskIO)
+    private void ensureSeeded() {
+        if (seeded) return;
+        synchronized (this) {
+            if (seeded) return;
+            seedIfEmpty();
+            seeded = true;
+        }
+    }
+
     public List<Client> getClients() {
-        if (!initialized) return new ArrayList<>(memClients);
+        ensureSeeded();
         try {
             List<ClientEntity> entities = db.clientDao().getAll();
             List<Client> out = new ArrayList<>();
@@ -80,7 +90,7 @@ public class DataManager {
     }
 
     public List<Budget> getBudgets() {
-        if (!initialized) return new ArrayList<>(memBudgets);
+        ensureSeeded();
         try {
             List<BudgetDao.BudgetWithItems> rows = db.budgetDao().getBudgetsWithItems();
             List<ClientEntity> clients = db.clientDao().getAll();
@@ -119,7 +129,7 @@ public class DataManager {
     }
 
     public List<Receivable> getReceivables() {
-        if (!initialized) return new ArrayList<>(memReceivables);
+        ensureSeeded();
         try {
             List<ReceivableEntity> entities = db.receivableDao().getAll();
             List<ClientEntity> clients = db.clientDao().getAll();
@@ -148,10 +158,6 @@ public class DataManager {
 
     public long addClient(Client c) {
         if (c == null) return -1;
-        if (!initialized) {
-            memClients.add(0, c);
-            return -1;
-        }
         ClientEntity e = new ClientEntity();
         e.setName(c.getName());
         e.setEmail(c.getEmail());
@@ -170,10 +176,6 @@ public class DataManager {
 
     public long addBudget(Budget b) {
         if (b == null) return -1;
-        if (!initialized) {
-            memBudgets.add(0, b);
-            return -1;
-        }
         long clientId = resolveClientIdByName(b.getClientName());
         if (clientId == -1) return -1;
 
@@ -218,7 +220,7 @@ public class DataManager {
         re.setClientId(clientId);
         re.setBudgetId(budgetDbId);
         re.setAmount(be.getTotalAmount());
-        re.setDueDate(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+        re.setDueDate(PreferencesManager.getInstance().dueDateFromNow());
         re.setStatus(Receivable.Status.PENDIENTE.name());
         try {
             db.receivableDao().insert(re);
@@ -230,10 +232,6 @@ public class DataManager {
 
     public long addReceivable(Receivable r) {
         if (r == null) return -1;
-        if (!initialized) {
-            memReceivables.add(0, r);
-            return -1;
-        }
         long clientId = resolveClientIdByName(r.getClientName());
         if (clientId == -1) return -1;
         BudgetEntity linked;
@@ -251,7 +249,7 @@ public class DataManager {
         e.setClientId(clientId);
         e.setBudgetId(budgetId);
         e.setAmount(r.getAmount());
-        e.setDueDate(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+        e.setDueDate(PreferencesManager.getInstance().dueDateFromNow());
         e.setStatus(r.getStatus() != null ? r.getStatus().name() : Receivable.Status.PENDIENTE.name());
         try {
             long id = db.receivableDao().insert(e);
@@ -267,7 +265,7 @@ public class DataManager {
     }
 
     public void updateBudgetStatus(Budget b) {
-        if (b == null || !initialized || b.getDbId() == 0) return;
+        if (b == null || b.getDbId() == 0) return;
         try {
             db.budgetDao().updateStatus(b.getDbId(),
                     b.getStatus() != null ? b.getStatus().name() : Budget.Status.BORRADOR.name());
@@ -278,7 +276,7 @@ public class DataManager {
     }
 
     public void updateReceivableStatus(Receivable r) {
-        if (r == null || !initialized || r.getDbId() == 0) return;
+        if (r == null || r.getDbId() == 0) return;
         try {
             db.receivableDao().updateStatus(r.getDbId(),
                     r.getStatus() != null ? r.getStatus().name() : Receivable.Status.PENDIENTE.name());
@@ -378,7 +376,7 @@ public class DataManager {
             receivable.setClientId(pedroId);
             receivable.setBudgetId(budgetId);
             receivable.setAmount(450000);
-            receivable.setDueDate(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+            receivable.setDueDate(PreferencesManager.getInstance().dueDateFromNow());
             receivable.setStatus(Receivable.Status.PENDIENTE.name());
             try {
                 db.receivableDao().insert(receivable);

@@ -10,10 +10,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.presupuestariov2.R;
+import com.example.presupuestariov2.ui.viewmodels.MasViewModel;
+import com.example.presupuestariov2.utils.PreferencesManager;
 
 public class MasFragment extends Fragment {
+
+    private MasViewModel viewModel;
 
     public MasFragment() {}
 
@@ -26,10 +31,9 @@ public class MasFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewModel = new ViewModelProvider(this).get(MasViewModel.class);
 
-        view.findViewById(R.id.btnConfiguracion).setOnClickListener(v ->
-                showInfoDialog("Configuración", "Esta sección estará disponible en la próxima versión.")
-        );
+        view.findViewById(R.id.btnConfiguracion).setOnClickListener(v -> showDueDaysDialog());
 
         view.findViewById(R.id.btnCerrarSesion).setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
@@ -43,12 +47,26 @@ public class MasFragment extends Fragment {
         });
     }
 
-    private void showInfoDialog(String title, String message) {
+    private void showDueDaysDialog() {
         if (getContext() == null) return;
+        int[] options = PreferencesManager.DUE_DAYS_OPTIONS;
+        String[] labels = new String[options.length];
+        int current = viewModel.getDueDays().getValue() != null
+                ? viewModel.getDueDays().getValue() : PreferencesManager.DEFAULT_DUE_DAYS;
+        int checked = -1;
+        for (int i = 0; i < options.length; i++) {
+            labels[i] = options[i] + " días";
+            if (options[i] == current) checked = i;
+        }
         new AlertDialog.Builder(requireContext())
-                .setTitle(title)
-                .setMessage(message)
-                .setPositiveButton("Entendido", null)
+                .setTitle("Vencimiento de cobros")
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    viewModel.setDueDays(options[which]);
+                    Toast.makeText(requireContext(),
+                            "Los nuevos cobros vencen a " + labels[which], Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                })
+                .setNegativeButton("Cancelar", null)
                 .show();
     }
 }
