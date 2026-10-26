@@ -7,14 +7,15 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 @Database(entities = {ClientEntity.class, BudgetEntity.class,
-        BudgetItemEntity.class, ReceivableEntity.class},
-        version = 1, exportSchema = false)
+        BudgetItemEntity.class, ReceivableEntity.class, UserEntity.class},
+        version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase instance;
 
     public abstract ClientDao clientDao();
     public abstract BudgetDao budgetDao();
     public abstract ReceivableDao receivableDao();
+    public abstract UserDao userDao();
 
     public static AppDatabase getInstance(Context context) {
         if (instance == null) {

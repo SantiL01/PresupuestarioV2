@@ -10,12 +10,15 @@ import com.example.presupuestariov2.data.local.BudgetItemEntity;
 import com.example.presupuestariov2.data.local.ClientDao;
 import com.example.presupuestariov2.data.local.ClientEntity;
 import com.example.presupuestariov2.data.local.ReceivableEntity;
+import com.example.presupuestariov2.data.local.UserEntity;
 import com.example.presupuestariov2.data.modelos.Budget;
 import com.example.presupuestariov2.data.modelos.BudgetItem;
 import com.example.presupuestariov2.data.modelos.Client;
 import com.example.presupuestariov2.data.modelos.Receivable;
+import com.example.presupuestariov2.data.modelos.User;
 import com.example.presupuestariov2.utils.AppExecutors;
 import com.example.presupuestariov2.utils.FormatUtils;
+import com.example.presupuestariov2.utils.HashUtils;
 import com.example.presupuestariov2.utils.PreferencesManager;
 
 import java.util.ArrayList;
@@ -284,6 +287,55 @@ public class DataManager {
             Log.e(TAG, "updateReceivableStatus", e);
             throw e;
         }
+    }
+
+    // ===== Usuarios / sesión =====
+
+    public boolean emailExists(String email) {
+        if (email == null) return false;
+        return db.userDao().getByEmail(email.trim()) != null;
+    }
+
+    public long registerUser(String name, String email, String password) {
+        if (name == null || email == null || password == null) return -1;
+        UserEntity e = new UserEntity();
+        e.setName(name.trim());
+        e.setEmail(email.trim().toLowerCase());
+        String salt = HashUtils.newSalt();
+        e.setSalt(salt);
+        e.setPasswordHash(HashUtils.hash(password, salt));
+        e.setCreatedAt(System.currentTimeMillis());
+        try {
+            long id = db.userDao().insert(e);
+            Log.i(TAG, "registerUser ok id=" + id);
+            return id;
+        } catch (Exception ex) {
+            Log.e(TAG, "registerUser error", ex);
+            return -1;
+        }
+    }
+
+    // Devuelve el usuario si las credenciales son válidas, o null
+    public User login(String email, String password) {
+        if (email == null || password == null) return null;
+        UserEntity e = db.userDao().getByEmail(email.trim());
+        if (e == null || !HashUtils.matches(password, e.getSalt(), e.getPasswordHash())) {
+            Log.d(TAG, "login rechazado");
+            return null;
+        }
+        return toUser(e);
+    }
+
+    public User getUserById(long id) {
+        if (id <= 0) return null;
+        UserEntity e = db.userDao().getById(id);
+        return e != null ? toUser(e) : null;
+    }
+
+    private User toUser(UserEntity e) {
+        User u = new User(e.getName(), e.getEmail());
+        u.setDbId(e.getId());
+        return u;
     }
 
     private long resolveClientIdByName(String name) {

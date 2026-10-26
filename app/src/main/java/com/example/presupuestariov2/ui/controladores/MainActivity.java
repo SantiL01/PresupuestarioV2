@@ -1,5 +1,6 @@
 package com.example.presupuestariov2.ui.controladores;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -58,6 +59,14 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
+
+        // Sin sesión activa se vuelve al login
+        if (!PreferencesManager.getInstance().hasSession()) {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
 
         sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
